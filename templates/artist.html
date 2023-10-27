@@ -1,0 +1,14 @@
+{% extends "header.html" %} {% block content %}
+
+<p>Home</p>
+
+{% for mural in murals: %}
+<a href="/murals/{{ mural['id'] }}">
+    <div>
+        <img style="width:150px" src="{{ mural['imageurl'] }}">
+        <p>{{ mural['title'] }}</p>
+    </div>
+</a>
+{% endfor %}
+
+{% endblock %}
