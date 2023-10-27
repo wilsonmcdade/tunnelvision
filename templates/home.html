@@ -1,16 +1,18 @@
 {% extends "header.html" %} {% block content %}
 
-<p>Home</p>
-
 <div class="container text-center">
     <div class="row row-cols-2">
     {% for mural in murals: %}
-    <a href="murals/{{ mural['id'] }}">
+    <div class="card" style="width: 15rem">
         <div class="col">
-            <img style="width:150px" src="{{ mural['imageurl'] }}">
-            <p>{{ mural['title'] }}</p>
+            <a href="murals/{{ mural['id'] }}">
+            <img class="card-img-top"  src="{{ mural['imageurl'] }}">
+            <div class="card-body">
+                <p>{{ mural['title'] }}</p>
+            </div>
+            </div>
+        </a>
         </div>
-    </a>
     {% endfor %}
     </div>
 </div>
