@@ -5,7 +5,7 @@
 {% for mural in murals: %}
 <a href="/murals/{{ mural['id'] }}">
     <div>
-        <img style="width:150px" src="{{ mural['imageurl'] }}">
+        <img style="width:150px" src="{{ mural['primaryimage'] }}">
         <p>{{ mural['title'] }}</p>
     </div>
 </a>

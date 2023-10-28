@@ -44,4 +44,4 @@ def get_bucket(s3_url, s3_key, s3_secret, bucket_name):
                 host = s3_url,
                 calling_format = boto.s3.connection.OrdinaryCallingFormat())
     # Return the bucket rather than the entire resource
-    return conn.get_bucket(bucket_name)
+    return conn.lookup(bucket_name)

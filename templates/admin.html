@@ -1,5 +1,97 @@
 {% extends "header.html" %} {% block content %}
 
 <p>Home</p>
+<div class="accordion" id="accordionExample">
+    <div class="accordion-item">
+      <h2 class="accordion-header" id="headingOne">
+        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+          Upload New Mural
+        </button>
+      </h2>
+      <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
+        <div class="accordion-body">
+            <div class="container mt-5">
+                <h2>New Mural</h2>
+                <form action="/upload" method="post" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Title</label>
+                        <input type="text" class="form-control" id="title" name="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="year" class="form-label">Year</label>
+                        <input type="text" class="form-control" id="year" name="year" required>
+                    </div>
+                    <div class="mb-3">
+                      <div class="form-check">
+                          <input class="form-check-input" type="checkbox" id="artistKnown" name="artistKnown">
+                          <label class="form-check-label" for="artistKnown">
+                              Artists Known?
+                          </label>
+                      </div>
+                  </div>
+                  <div class="mb-3" id="artistsField" style="display:none;">
+                      <label for="artists" class="form-label">Artists</label>
+                      <input type="text" class="form-control" id="artists" name="artists">
+                  </div>
+                    <div class="mb-3">
+                        <label for="location" class="form-label">Location</label>
+                        <input type="text" class="form-control" id="location" name="location">
+                    </div>
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="images" class="form-label">Multiple Images</label>
+                        <input type="file" class="form-control" id="images" name="images[]" multiple>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                </form>
+            </div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingTwo">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+            Manage Existing Murals
+          </button>
+        </h2>
+        <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#accordionExample">
+          <div class="accordion-body">
+            <div class="container text-center">
+                <h1>{{ pageTitle }}</h1>
+                <div class="row row-cols-2">
+                {% for mural in murals: %}
+                <div class="card" style="width: 15rem">
+                    <div class="col">
+                        <a style="text-decoration: none;" href="/edit/{{ mural['id'] }}">
+                        <img class="card-img-top"  src="{{ mural['primaryimage'] }}">
+                        <div class="card-body">
+                            <p>{{ mural['title'] }}</p>
+                            <p>({{ mural['year'] }})</p>
+                        </div>
+                        </div>
+                    </a>
+                    </div>
+                {% endfor %}
+                </div>
+            </div>          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // JavaScript to toggle the visibility of the "Artists" field based on the checkbox state
+      const artistKnownCheckbox = document.getElementById("artistKnown");
+      const artistsField = document.getElementById("artistsField");
+
+      artistKnownCheckbox.addEventListener("change", function () {
+          if (artistKnownCheckbox.checked) {
+              artistsField.style.display = "block";
+          } else {
+              artistsField.style.display = "none";
+          }
+      });
+  </script>
 
 {% endblock %}

@@ -1,0 +1,55 @@
+{% extends "header.html" %} {% block content %}
+
+<div class="container">
+    <h1>{{ muralDetails["title"] }} </h1>
+    <div class="row">
+        <div class="col-8">
+            {% for image in muralDetails["images"]: %}
+            <img style="width:100%;" src="{{ muralDetails['images'][loop.index-1]['imgurl'] }}">
+            <form action="/editimage/{{ muralDetails['images'][loop.index-1]['id'] }}" method="post">
+                <div class="mb-3">
+                    <label for="caption" class="form-label">Caption</label>
+                    <input value="{{ muralDetails['images'][loop.index-1]['caption'] }}" type="text" class="form-control" id="caption" name="caption" required>
+                </div>
+                <div class="mb-3">
+                    <label for="alttext" class="form-label">Alt Text</label>
+                    <input value="{{ muralDetails['images'][loop.index-1]['alttext'] }}" type="text" class="form-control" id="alttext" name="alttext" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Edit Details</button>
+                </form>
+            <form action="/deleteimage/{{ muralDetails['images'][loop.index-1]['id'] }}" method="post">
+            <button type="submit" class="btn btn-danger">Delete Image</button>
+            </form>
+            {% endfor %}
+        </div>
+        <div class="col-4">
+            <h3>Notes:</h3>
+            <p>{{ muralDetails["notes"] }}</p>
+            <h3>Year:</h3>
+            <p><a href="/year/{{ muralDetails['year'] }}">{{ muralDetails["year"] }}</a></p>
+            <h3>Location:</h3>
+            <p>{{ muralDetails["location"] }} </p>
+            
+            {% if muralDetails["artists"]|length > 0: %}
+            <h3>Artists:</h3>
+            <ul>
+            {% for artist in muralDetails["artists"]: %}
+            <li><a href="/artist/{{ artist['id'] }}">{{artist["name"]}}</a></li>
+            {% endfor %}
+            </ul>
+            {% endif %}
+            <form action="/delete/{{ muralDetails['id'] }}" method="delete">
+            <button type="submit" class="btn btn-danger">Delete Mural</button>
+            </form>
+        </div>
+        {% if muralDetails['prevmuralid'] != None: %}
+        <p><a href="{{ muralDetails['prevmuralid'] }}">Prev</a></p>
+        {% endif %}
+
+        {% if muralDetails['nextmuralid'] != None: %}
+        <a href="{{ muralDetails['nextmuralid'] }}">Next</a>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

@@ -4,13 +4,49 @@
     <h1>{{ muralDetails["title"] }} </h1>
     <div class="row">
         <div class="col-8">
-            <img style="height: 150px" src="{{ muralDetails['imageurl'] }}">
+            <div id="muralImagesCaptions" class="carousel slide" data-bs-ride="carousel">
+                <div class="carousel-indicators">
+                    {% for image in muralDetails["images"]: %}
+                    {% if loop.index == 1 %}
+                        <button type="button" data-bs-target="muralImagesCaptions" data-bs-slide-to="{{ loop.index-1 }}" class="active" aria-current="true" aria-label="Slide {{ loop.index-1 }}"></button>
+                    {% else %}
+                        <button type="button" data-bs-target="muralImagesCaptions" data-bs-slide-to="{{ loop.index-1 }}" aria-label="Slide {{ loop.index-1 }}"></button>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+                <div class="carousel-inner">
+                    {% for image in muralDetails["images"]: %}
+                    {% if loop.index == 1 %}
+                    <div class="carousel-item active">
+                    {% else %}
+                    <div class="carousel-item text-center">
+                    {% endif %}
+                        <img style="width:100%;" alt="{{ muralDetails['images'][loop.index-1]['alttext'] }}" src="{{ muralDetails['images'][loop.index-1]['imgurl'] }}">
+                        <div class="carousel-caption d-none d-md-block bg-light">
+                            <p class="text-dark">{{ muralDetails['images'][loop.index-1]['caption'] }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if muralDetails["images"]|length > 1 %}
+                <button class="carousel-control-prev" type="button" data-bs-target="#muralImagesCaptions" data-bs-slide="prev">
+                  <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                  <span class="visually-hidden">Previous</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#muralImagesCaptions" data-bs-slide="next">
+                  <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                  <span class="visually-hidden">Next</span>
+                </button>
+                {% endif %}
+            </div>
         </div>
         <div class="col-4">
+            {% if muralDetails["notes"] != '' %}
             <h3>Notes:</h3>
             <p>{{ muralDetails["notes"] }} </p>
+            {% endif %}
             <h3>Year:</h3>
-            <p>{{ muralDetails["year"] }} </p>
+            <p><a href="/year/{{ muralDetails['year'] }}">{{ muralDetails["year"] }}</a></p>
             <h3>Location:</h3>
             <p>{{ muralDetails["location"] }} </p>
             
