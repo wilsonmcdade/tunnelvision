@@ -1,10 +1,13 @@
 import os
 import subprocess
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, abort
 import psycopg2
 import logging
 from werkzeug.utils import secure_filename
+from werkzeug.exceptions import HTTPException
 import hashlib
+import re
+from functools import wraps
 from s3 import get_bucket, get_file_s3, upload_file, remove_file, get_file_list
 
 app = Flask(__name__)
@@ -43,7 +46,7 @@ def getAllMurals(cursor):
     return returnable
 
 def getAllMuralsFromYear(cursor, year):
-    cursor.execute("select id, title, notes, year, location, nextmuralid, artistKnown from murals where year = {0} order by id asc".format(year))
+    cursor.execute("select id, title, notes, year, location, nextmuralid, artistKnown from murals where year = %s order by id asc", (year,))
     murals = cursor.fetchmany(150)
     returnable = []
 
@@ -53,7 +56,7 @@ def getAllMuralsFromYear(cursor, year):
     return returnable
 
 def getAllMuralsFromArtist(cursor, id):
-    cursor.execute("select id, title, notes, year, location, nextmuralid, artistKnown from murals inner join artistMuralRelation on murals.id = artistMuralRelation.mural_id where artistMuralRelation.artist_id = {0} order by id asc".format(id))
+    cursor.execute("select id, title, notes, year, location, nextmuralid, artistKnown from murals inner join artistMuralRelation on murals.id = artistMuralRelation.mural_id where artistMuralRelation.artist_id = %s order by id asc", (id, ))
     murals = cursor.fetchmany(150)
     returnable = []
 
@@ -63,7 +66,7 @@ def getAllMuralsFromArtist(cursor, id):
     return returnable
 
 def getArtistDetails(cursor, id):
-    cursor.execute("select id, name, notes from artists where id={0}".format(id[0]))
+    cursor.execute("select id, name, notes from artists where id=%s", (id, ))
     resp = cursor.fetchone()
     return {
             "id":      resp[0],
@@ -72,7 +75,7 @@ def getArtistDetails(cursor, id):
             }
 
 def getMural(cursor, id):
-    cursor.execute("select id, title, notes, year, location, nextmuralid, artistKnown from murals where id = {0}".format(id))
+    cursor.execute("select id, title, notes, year, location, nextmuralid, artistKnown from murals where id = %s", (id, ))
     dbResp = cursor.fetchone()
 
     if dbResp == None:
@@ -102,10 +105,10 @@ def handleMuralDBResp(cursor, dbResp):
     artists = []
 
     if dbResp[6] == True:
-        cursor.execute("select artists.id AS id, artists.name AS name from artists left join artistMuralRelation on artists.id = artistMuralRelation.artist_id where mural_id = {0}".format(dbResp[0]))
+        cursor.execute("select artists.id AS id, artists.name AS name from artists left join artistMuralRelation on artists.id = artistMuralRelation.artist_id where mural_id = %s", (dbResp[0], ))
         artists = cursor.fetchall()
 
-    cursor.execute("select id from murals where nextmuralid = {0}".format(dbResp[0]))
+    cursor.execute("select id from murals where nextmuralid = %s", (dbResp[0], ))
     prevmuralid = cursor.fetchone()
 
     muralInfo["id"] = dbResp[0]
@@ -117,7 +120,7 @@ def handleMuralDBResp(cursor, dbResp):
         muralInfo["prevmuralid"] = prevmuralid[0]
     muralInfo["nextmuralid"] = dbResp[5]
 
-    cursor.execute("select images.imghash as imghash, images.ordering as ordering, images.caption AS caption, images.alttext AS alttext, images.id as id from images left join imageMuralRelation on images.id = imageMuralRelation.image_id where imageMuralRelation.mural_id = {0};".format(dbResp[0]))
+    cursor.execute("select images.imghash as imghash, images.ordering as ordering, images.caption AS caption, images.alttext AS alttext, images.id as id from images left join imageMuralRelation on images.id = imageMuralRelation.image_id where imageMuralRelation.mural_id = %s;", (dbResp[0], ))
     images = cursor.fetchall()
 
     if (images != None):
@@ -133,20 +136,38 @@ def handleMuralDBResp(cursor, dbResp):
 
 def checkYearExists(cursor, year):
     if not year.isdigit():
-        return None
+        return False
+    
+    integer_pattern = r'^[+-]?\d+$'
+
+    # Use re.match to check if the variable matches the integer pattern
+    if not re.match(integer_pattern, str(id)):
+        return False
     
     return True
 
 def checkArtistExists(cursor, id):
     if not id.isdigit():
-        return None
+        return False
+    
+    integer_pattern = r'^[+-]?\d+$'
+
+    # Use re.match to check if the variable matches the integer pattern
+    if not re.match(integer_pattern, str(id)):
+        return False
     
     return True
 
 def checkMuralExists(cursor, id):
     # Check id is not bad
     if not id.isdigit():
-        return None
+        return False
+    
+    integer_pattern = r'^[+-]?\d+$'
+
+    # Use re.match to check if the variable matches the integer pattern
+    if not re.match(integer_pattern, str(id)):
+        return False
 
     return True
 
@@ -157,7 +178,7 @@ def getAllArtists(cursor):
     returnable = []
 
     for id in resp:
-        returnable.append(getArtistDetails(cursor,id))
+        returnable.append(getArtistDetails(cursor,id[0]))
 
     return returnable
 
@@ -173,6 +194,15 @@ def getRandomImages(count):
             returnable.append({"imgurl":get_file_s3(s3_bucket,image[0]),"ordering":image[1],"caption":image[2],"alttext":image[3], "id":image[4]})
 
     return returnable
+
+def debug_only(f):
+    @wraps(f)
+    def wrapped(**kwargs):
+        if app.config["DEBUG"]:
+            print("umm")
+            return f(**kwargs)
+        return abort(404)
+    return wrapped
 
 @app.route("/")
 def home():
@@ -200,6 +230,7 @@ def year(year):
         return render_template("404.html")
     
 @app.route('/edit/<id>')
+@debug_only
 def edit(id):
     return render_template("edit.html", muralDetails=getMural(conn.cursor(), id))
 
@@ -208,41 +239,43 @@ def about():
     return render_template("about.html", muralHighlights=getRandomImages(0))
 
 @app.route('/deleteArtist/<id>', methods=["POST"])
+@debug_only
 def deleteArtist(id):
     if checkArtistExists(conn.cursor(), id):
         curs = conn.cursor()
 
-        curs.execute("delete from artistmuralrelation where artist_id = {0}".format(id))
-        curs.execute("delete from artists where id = {0}".format(id))
+        curs.execute("delete from artistmuralrelation where artist_id = %s", (id, ))
+        curs.execute("delete from artists where id = %s", (id, ))
 
         conn.commit()
-
-        return ('', 204)
+        return redirect("/admin")
     else:
         return render_template("404.html")
 
 @app.route('/delete/<id>', methods=["POST"])
+@debug_only
 def delete(id):
     if checkMuralExists(conn.cursor(), id):
         curs = conn.cursor()
-        curs.execute("select images.imghash as imghash, images.id as id from images left join imageMuralRelation on images.id = imageMuralRelation.image_id where imageMuralRelation.mural_id = {0};".format(id))
+        curs.execute("select images.imghash as imghash, images.id as id from images left join imageMuralRelation on images.id = imageMuralRelation.image_id where imageMuralRelation.mural_id = %s;", (id, ))
         images = curs.fetchmany(150)
 
         for image in images:
             remove_file(s3_bucket, image[0])
-            curs.execute("delete from images where id='{0}'".format(image[1]))
+            curs.execute("delete from images where id='%s'", (image[1], ))
         
-        curs.execute("delete from imagemuralrelation where mural_id = {0}".format(id))
+        curs.execute("delete from imagemuralrelation where mural_id = %s", (id, ))
 
-        curs.execute("delete from artistmuralrelation where mural_id = {0}".format(id))
+        curs.execute("delete from artistmuralrelation where mural_id = %s", (id, ))
 
-        curs.execute("delete from murals where id = {0}".format(id))
+        curs.execute("delete from murals where id = %s", (id, ))
         conn.commit()
-        return ('', 204)
+        return redirect("/admin")
     else:
         return render_template("404.html")
     
 @app.route('/editimage/<id>', methods=["POST"])
+@debug_only
 def editImage(id):
     curs = conn.cursor()
 
@@ -252,6 +285,7 @@ def editImage(id):
     return ('', 204)
 
 @app.route('/deleteimage/<id>', methods=["POST"])
+@debug_only
 def deleteImage(id):
     curs = conn.cursor()
     curs.execute("select images.imghash as imghash from images left join imageMuralRelation on images.id = imageMuralRelation.image_id where imageMuralRelation.image_id = {0};".format(id))
@@ -262,12 +296,14 @@ def deleteImage(id):
     curs.execute("delete from imagemuralrelation where image_id = {0}".format(id))
     conn.commit()
 
-    return ('', 204)
+    return redirect("/edit/")
 
+@app.errorhandler(HTTPException)
 def not_found(e):
     return render_template("404.html")
 
 @app.route("/uploadimage/<id>", methods=["POST"])
+@debug_only
 def uploadNewImage(id):
     curs = conn.cursor()
     count = 0
@@ -297,6 +333,7 @@ def uploadNewImage(id):
     return redirect("/edit/{0}".format(id))
 
 @app.route("/upload", methods=["POST"])
+@debug_only
 def upload():
     print(request.form)
     print(request.files)
@@ -350,11 +387,12 @@ def upload():
     return redirect("/edit/{0}".format(mural_id))
 
 @app.route("/admin")
+@debug_only
 def admin():
     return render_template("admin.html", murals=getAllMurals(conn.cursor()), artists=getAllArtists(conn.cursor()))
 
 if __name__ == "__main__":
     try:
-        app.run(host="0.0.0.0", debug=True)
+        app.run(host="0.0.0.0")
     finally:
         conn.close()

@@ -24,8 +24,8 @@
                         <img style="width:100%;" alt="{{ muralDetails['images'][loop.index-1]['alttext'] }}" src="{{ muralDetails['images'][loop.index-1]['imgurl'] }}">
                     </div>
                     {% if muralDetails['images'][loop.index-1]['caption'] != None %}
-                    <div class="carousel-caption d-none d-md-block bg-light">
-                        <p class="text-dark">{{ muralDetails['images'][loop.index-1]['caption'] }}</p>
+                    <div class="carousel-caption d-none d-md-block ">
+                        <p class="text-dark bg-light">{{ muralDetails['images'][loop.index-1]['caption'] }}</p>
                     </div>
                     {% endif %}
                     {% endfor %}
