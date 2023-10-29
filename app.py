@@ -262,7 +262,7 @@ def delete(id):
 
         for image in images:
             remove_file(s3_bucket, image[0])
-            curs.execute("delete from images where id='%s'", (image[1], ))
+            curs.execute("delete from images where id=%s", (image[1], ))
         
         curs.execute("delete from imagemuralrelation where mural_id = %s", (id, ))
 
@@ -279,7 +279,7 @@ def delete(id):
 def editImage(id):
     curs = conn.cursor()
 
-    curs.execute("update images set caption = '%s', alttext = '%s' where id = %s", (request.form["caption"],request.form["alttext"],id))
+    curs.execute("update images set caption = %s, alttext = %s where id = %s", (request.form["caption"],request.form["alttext"],id))
 
     conn.commit()
     return ('', 204)
@@ -314,14 +314,14 @@ def uploadNewImage(id):
         file_hash = hashlib.md5(f[1].read()).hexdigest()
         f[1].seek(0)
 
-        curs.execute("select count(*) from images where imghash = '%s'", (file_hash, ))
+        curs.execute("select count(*) from images where imghash = %s", (file_hash, ))
         if (int(curs.fetchone()[0]) > 0):
             print(file_hash)
             return render_template("404.html")
         
         upload_file(s3_bucket, file_hash, f[1])
 
-        curs.execute("insert into images (imghash, ordering) values ('%s', %s) returning id", (file_hash, count))
+        curs.execute("insert into images (imghash, ordering) values (%s, %s) returning id", (file_hash, count))
         img_id = curs.fetchone()[0]
 
         curs.execute("insert into imageMuralRelation (image_id, mural_id) values (%s, %s)", (img_id,id))
@@ -344,7 +344,7 @@ def upload():
     if not (request.form["year"].isdigit()):
         return render_template("404.html")
 
-    curs.execute("insert into murals (title, artistKnown, notes, year, location) values ('%s', %s, '%s', %s, '%s') returning id;",(request.form["title"],artistKnown,request.form["notes"], request.form["year"], request.form["location"]))
+    curs.execute("insert into murals (title, artistKnown, notes, year, location) values (%s, %s, %s, %s, %s) returning id;",(request.form["title"],artistKnown,request.form["notes"], request.form["year"], request.form["location"]))
     mural_id = curs.fetchone()[0]
 
     count = 0
@@ -355,14 +355,14 @@ def upload():
         file_hash = hashlib.md5(f[1].read()).hexdigest()
         f[1].seek(0)
 
-        curs.execute("select count(*) from images where imghash = '%s'",(file_hash, ))
+        curs.execute("select count(*) from images where imghash = %s",(file_hash, ))
         if (int(curs.fetchone()[0]) > 0):
             print(file_hash)
             return render_template("404.html")
         
         upload_file(s3_bucket, file_hash, f[1])
 
-        curs.execute("insert into images (imghash, ordering) values ('%s', %s) returning id", (file_hash, count))
+        curs.execute("insert into images (imghash, ordering) values (%s, %s) returning id", (file_hash, count))
         img_id = curs.fetchone()[0]
 
         curs.execute("insert into imageMuralRelation (image_id, mural_id) values (%s, %s)", (img_id,mural_id))
@@ -372,11 +372,11 @@ def upload():
     if (artistKnown):
         artists = request.form["artists"].split(',')
         for artist in artists:
-            curs.execute("select count(*) from artists where name = '%s'", (artist, ))
+            curs.execute("select count(*) from artists where name = %s", (artist, ))
             if(int(curs.fetchone()[0]) > 0):
-                curs.execute("select id from artists where name = '%s'", (artist,))
+                curs.execute("select id from artists where name = %s", (artist,))
             else:
-                curs.execute("insert into artists (name) values ('%s') returning id", (artist, ))
+                curs.execute("insert into artists (name) values (%s) returning id", (artist, ))
 
             artist_id = curs.fetchone()[0]
 
