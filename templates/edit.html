@@ -3,7 +3,7 @@
 <div class="container">
     <h1>{{ muralDetails["title"] }} </h1>
     <div class="row">
-        <div class="col-8">
+        <div class="col-8 mb-3">
             {% for image in muralDetails["images"]: %}
             <img style="width:100%;" src="{{ muralDetails['images'][loop.index-1]['imgurl'] }}">
             <form action="/editimage/{{ muralDetails['images'][loop.index-1]['id'] }}" method="post">
@@ -21,6 +21,13 @@
             <button type="submit" class="btn btn-danger">Delete Image</button>
             </form>
             {% endfor %}
+            <form action="/uploadimage/{{ muralDetails['id'] }}" method="post" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label for="images" class="form-label">Upload New Images</label>
+                    <input type="file" class="form-control" id="images" name="images[]" multiple>
+                </div>
+            <button type="submit" class="btn btn-primary">Upload New Images</button>
+            </form>
         </div>
         <div class="col-4">
             <h3>Notes:</h3>
@@ -38,7 +45,7 @@
             {% endfor %}
             </ul>
             {% endif %}
-            <form action="/delete/{{ muralDetails['id'] }}" method="delete">
+            <form action="/delete/{{ muralDetails['id'] }}" method="post">
             <button type="submit" class="btn btn-danger">Delete Mural</button>
             </form>
         </div>

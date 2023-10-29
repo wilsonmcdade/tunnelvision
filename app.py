@@ -5,10 +5,9 @@ import psycopg2
 import logging
 from werkzeug.utils import secure_filename
 import hashlib
-from s3 import get_bucket, get_file_s3, upload_file, remove_file
+from s3 import get_bucket, get_file_s3, upload_file, remove_file, get_file_list
 
 app = Flask(__name__)
-print("Starting up...")
 logging.info("Starting up...")
 
 if os.path.exists(os.path.join(os.getcwd(), "config.py")):
@@ -21,6 +20,8 @@ app.config["GIT_REVISION"] = subprocess.check_output(git_cmd).decode('utf-8').rs
 
 logging.info("Connecting to S3 Bucket {0}".format(app.config["BUCKET_NAME"]))
 s3_bucket = get_bucket(app.config["S3_URL"], app.config["S3_KEY"], app.config["S3_SECRET"], app.config["BUCKET_NAME"])
+
+files = get_file_list(s3_bucket)
 
 logging.info("Connecting to DB {0}".format(app.config["DBNAME"]))
 conn = psycopg2.connect(**{
@@ -60,6 +61,15 @@ def getAllMuralsFromArtist(cursor, id):
         returnable.append(handleMuralDBResp(cursor, mural))
 
     return returnable
+
+def getArtistDetails(cursor, id):
+    cursor.execute("select id, name, notes from artists where id={0}".format(id[0]))
+    resp = cursor.fetchone()
+    return {
+            "id":      resp[0],
+            "name":    resp[1],
+            "notes":   resp[2]
+            }
 
 def getMural(cursor, id):
     cursor.execute("select id, title, notes, year, location, nextmuralid, artistKnown from murals where id = {0}".format(id))
@@ -140,9 +150,33 @@ def checkMuralExists(cursor, id):
 
     return True
 
+def getAllArtists(cursor):
+    cursor.execute("select id from artists")
+    resp = cursor.fetchall()
+
+    returnable = []
+
+    for id in resp:
+        returnable.append(getArtistDetails(cursor,id))
+
+    return returnable
+
+def getRandomImages(count):
+    returnable = []
+    cursor = conn.cursor()
+
+    cursor.execute("select images.imghash as imghash, images.ordering as ordering, images.caption AS caption, images.alttext AS alttext, images.id as id from images left join imageMuralRelation on images.id = imageMuralRelation.image_id where imageMuralRelation.mural_id > 3")
+    images = cursor.fetchall()
+
+    if (images != None):
+        for image in images:
+            returnable.append({"imgurl":get_file_s3(s3_bucket,image[0]),"ordering":image[1],"caption":image[2],"alttext":image[3], "id":image[4]})
+
+    return returnable
+
 @app.route("/")
 def home():
-    return render_template("home.html", pageTitle="Home", murals=getAllMurals(conn.cursor()))
+    return render_template("home.html", pageTitle="Tunnel Vision: RIT's Overlooked Art Museum", muralHighlights=getRandomImages(0),murals=getAllMurals(conn.cursor()))
 
 @app.route("/murals/<id>")
 def mural(id):
@@ -154,14 +188,14 @@ def mural(id):
 @app.route("/artist/<id>")
 def artist(id):
     if (checkArtistExists(conn.cursor(), id)):
-        return render_template("home.html", pageTitle="Artist Search", murals=getAllMuralsFromArtist(conn.cursor(), id))
+        return render_template("filtered.html", pageTitle="Artist Search", subHeading=getArtistDetails(conn.cursor(), id), murals=getAllMuralsFromArtist(conn.cursor(), id))
     else:
         return render_template("404.html")
     
 @app.route("/year/<year>")
 def year(year):
     if (checkYearExists(conn.cursor(), year)):
-        return render_template("home.html", pageTitle="Murals from {0}".format(year), murals=getAllMuralsFromYear(conn.cursor(), year))
+        return render_template("filtered.html", pageTitle="Murals from {0}".format(year), subHeading=None, murals=getAllMuralsFromYear(conn.cursor(), year))
     else:
         return render_template("404.html")
     
@@ -169,19 +203,39 @@ def year(year):
 def edit(id):
     return render_template("edit.html", muralDetails=getMural(conn.cursor(), id))
 
-@app.route('/delete/<id>')
+@app.route('/about')
+def about():
+    return render_template("about.html", muralHighlights=getRandomImages(0))
+
+@app.route('/deleteArtist/<id>', methods=["POST"])
+def deleteArtist(id):
+    if checkArtistExists(conn.cursor(), id):
+        curs = conn.cursor()
+
+        curs.execute("delete from artistmuralrelation where artist_id = {0}".format(id))
+        curs.execute("delete from artists where id = {0}".format(id))
+
+        conn.commit()
+
+        return ('', 204)
+    else:
+        return render_template("404.html")
+
+@app.route('/delete/<id>', methods=["POST"])
 def delete(id):
     if checkMuralExists(conn.cursor(), id):
-        mural = getMural(conn.cursor(), id)
         curs = conn.cursor()
-        curs.execute("select images.imghash as imghash from images left join imageMuralRelation on images.id = imageMuralRelation.image_id where imageMuralRelation.mural_id = {0};".format(id))
+        curs.execute("select images.imghash as imghash, images.id as id from images left join imageMuralRelation on images.id = imageMuralRelation.image_id where imageMuralRelation.mural_id = {0};".format(id))
         images = curs.fetchmany(150)
 
         for image in images:
             remove_file(s3_bucket, image[0])
-
+            curs.execute("delete from images where id='{0}'".format(image[1]))
         
         curs.execute("delete from imagemuralrelation where mural_id = {0}".format(id))
+
+        curs.execute("delete from artistmuralrelation where mural_id = {0}".format(id))
+
         curs.execute("delete from murals where id = {0}".format(id))
         conn.commit()
         return ('', 204)
@@ -213,6 +267,35 @@ def deleteImage(id):
 def not_found(e):
     return render_template("404.html")
 
+@app.route("/uploadimage/<id>", methods=["POST"])
+def uploadNewImage(id):
+    curs = conn.cursor()
+    count = 0
+    for f in request.files.items(multi=True):
+        filename = secure_filename(f[1].filename)
+        print(f[1].filename)
+
+        file_hash = hashlib.md5(f[1].read()).hexdigest()
+        f[1].seek(0)
+
+        curs.execute("select count(*) from images where imghash = '{0}'".format(file_hash))
+        if (int(curs.fetchone()[0]) > 0):
+            print(file_hash)
+            return render_template("404.html")
+        
+        upload_file(s3_bucket, file_hash, f[1])
+
+        curs.execute("insert into images (imghash, ordering) values ('{0}', {1}) returning id".format(file_hash, count))
+        img_id = curs.fetchone()[0]
+
+        curs.execute("insert into imageMuralRelation (image_id, mural_id) values ({0}, {1})".format(img_id,id))
+
+        count += 1
+
+    conn.commit()
+    
+    return redirect("/edit/{0}".format(id))
+
 @app.route("/upload", methods=["POST"])
 def upload():
     print(request.form)
@@ -237,9 +320,10 @@ def upload():
 
         curs.execute("select count(*) from images where imghash = '{0}'".format(file_hash))
         if (int(curs.fetchone()[0]) > 0):
+            print(file_hash)
             return render_template("404.html")
         
-        upload_file(s3_bucket, 2, f[1])
+        upload_file(s3_bucket, file_hash, f[1])
 
         curs.execute("insert into images (imghash, ordering) values ('{0}', {1}) returning id".format(file_hash, count))
         img_id = curs.fetchone()[0]
@@ -267,8 +351,10 @@ def upload():
 
 @app.route("/admin")
 def admin():
-    return render_template("admin.html", murals=getAllMurals(conn.cursor()))
+    return render_template("admin.html", murals=getAllMurals(conn.cursor()), artists=getAllArtists(conn.cursor()))
 
 if __name__ == "__main__":
-    getAllMurals(conn.cursor())
-    app.run(host="0.0.0.0", debug=True)
+    try:
+        app.run(host="0.0.0.0", debug=True)
+    finally:
+        conn.close()

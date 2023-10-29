@@ -1,14 +1,25 @@
 {% extends "header.html" %} {% block content %}
 
-<p>Home</p>
+<h1>{{ pageTitle }}: {{ subHeading["name"] }}</h1>
+{% if subHeading["notes"] != None %}
+<h3>{{ subHeading["notes"] }}</h3>
+{% endif %}
 
+
+<div class="row row-cols-5">
 {% for mural in murals: %}
-<a href="/murals/{{ mural['id'] }}">
-    <div>
-        <img style="width:150px" src="{{ mural['primaryimage'] }}">
-        <p>{{ mural['title'] }}</p>
+<div class="card">
+    <div class="col">
+        <a style="text-decoration: none;" href="/murals/{{ mural['id'] }}">
+        <img class="card-img-top" src="{{ mural['primaryimage'] }}">
+        <div class="card-body">
+            <p>{{ mural['title'] }}</p>
+            <p>({{ mural['year'] }})</p>
+        </div>
+        </div>
+    </a>
     </div>
-</a>
 {% endfor %}
+</div>
 
 {% endblock %}

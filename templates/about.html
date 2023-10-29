@@ -36,21 +36,8 @@
         </button>
         {% endif %}
     </div>
-    <div class="row row-cols-5">
-    {% for mural in murals: %}
-    <div class="card">
-        <div class="col">
-            <a style="text-decoration: none;" href="/murals/{{ mural['id'] }}">
-            <img class="card-img-top" src="{{ mural['primaryimage'] }}">
-            <div class="card-body">
-                <p>{{ mural['title'] }}</p>
-                <p>({{ mural['year'] }})</p>
-            </div>
-            </div>
-        </a>
-        </div>
-    {% endfor %}
-    </div>
+    <h2>What's this all about?</h2>
+    <p>Blah</p>
 </div>
 
 {% endblock %}
