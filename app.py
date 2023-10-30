@@ -8,6 +8,7 @@ from werkzeug.exceptions import HTTPException
 import hashlib
 import re
 from functools import wraps
+from random import shuffle
 from s3 import get_bucket, get_file_s3, upload_file, remove_file, get_file_list
 
 app = Flask(__name__)
@@ -141,7 +142,7 @@ def checkYearExists(cursor, year):
     integer_pattern = r'^[+-]?\d+$'
 
     # Use re.match to check if the variable matches the integer pattern
-    if not re.match(integer_pattern, str(id)):
+    if not re.match(integer_pattern, year):
         return False
     
     return True
@@ -193,6 +194,8 @@ def getRandomImages(count):
         for image in images:
             returnable.append({"imgurl":get_file_s3(s3_bucket,image[0]),"ordering":image[1],"caption":image[2],"alttext":image[3], "id":image[4]})
 
+    shuffle(returnable)
+
     return returnable
 
 def debug_only(f):
@@ -225,7 +228,11 @@ def artist(id):
 @app.route("/year/<year>")
 def year(year):
     if (checkYearExists(conn.cursor(), year)):
-        return render_template("filtered.html", pageTitle="Murals from {0}".format(year), subHeading=None, murals=getAllMuralsFromYear(conn.cursor(), year))
+        if (year == "0"):
+            readableYear = "Unknown Date"
+        else:
+            readableYear = year
+        return render_template("filtered.html", pageTitle="Murals from {0}".format(readableYear), subHeading=None, murals=getAllMuralsFromYear(conn.cursor(), year))
     else:
         return render_template("404.html")
     
@@ -380,7 +387,7 @@ def upload():
 
             artist_id = curs.fetchone()[0]
 
-            curs.execute("insert into artistMuralRelation (artist_id, mural_id) values (%s ,%s", (artist_id,mural_id))
+            curs.execute("insert into artistMuralRelation (artist_id, mural_id) values (%s ,%s)", (artist_id,mural_id))
 
     conn.commit()
 

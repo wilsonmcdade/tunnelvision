@@ -1,7 +1,5 @@
 {% extends "header.html" %} {% block content %}
 
-
-
 <div class="container text-center">
     <h1>{{ pageTitle }}</h1>
     <div id="muralImagesCaptions" class="carousel slide mb-3" data-bs-ride="carousel">
@@ -38,17 +36,7 @@
     </div>
     <div class="row row-cols-5">
     {% for mural in murals: %}
-    <div class="card">
-        <div class="col">
-            <a style="text-decoration: none;" href="/murals/{{ mural['id'] }}">
-            <img class="card-img-top" src="{{ mural['primaryimage'] }}">
-            <div class="card-body">
-                <p>{{ mural['title'] }}</p>
-                <p>({{ mural['year'] }})</p>
-            </div>
-            </div>
-        </a>
-        </div>
+        {{ muralcard(mural) }}
     {% endfor %}
     </div>
 </div>

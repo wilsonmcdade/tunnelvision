@@ -1,3 +1,17 @@
+{% macro muralcard(mural) %}
+<div class="card">
+    <div class="col">
+        <a style="text-decoration: none;" href="/murals/{{ mural['id'] }}">
+        <img class="card-img-top" src="{{ mural['primaryimage'] }}">
+        <div class="card-body">
+            <p>{{ mural['title'] }}</p>
+            <p>({% if mural["year"] != 0 %}{{ mural["year"] }}{% else %}Unknown{% endif %})</p>
+        </div>
+        </div>
+    </a>
+    </div>
+{% endmacro %}
+
 {% block header %}
 <!DOCTYPE html>
 <html>

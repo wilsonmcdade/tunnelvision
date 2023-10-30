@@ -49,7 +49,7 @@
             <p>{{ muralDetails["notes"] }} </p>
             {% endif %}
             <h3>Year:</h3>
-            <p><a href="/year/{{ muralDetails['year'] }}">{{ muralDetails["year"] }}</a></p>
+            <p><a href="/year/{{ muralDetails['year'] }}">{% if muralDetails["year"] != 0 %}{{ muralDetails["year"] }}{% else %}Unknown{% endif %}</a></p>
             <h3>Location:</h3>
             <p>{{ muralDetails["location"] }} </p>
             
