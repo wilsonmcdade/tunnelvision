@@ -6,6 +6,10 @@ import mimetypes
 import boto
 import boto.s3.connection
 
+def get_file(bucket_name, file_hash, new_file_name, key, secret):
+    with open(new_file_name, "wb") as f:
+        boto.utils.fetch_file("s3://{0}/{1}".format(bucket_name,file_hash), file=f, username=key, password=secret)
+
 def get_file_s3(bucket, file_hash):
     key = bucket.get_key(file_hash)
     # Generates presigned URL that lasts for 60 seconds (1 minute)
@@ -22,12 +26,15 @@ def get_date_modified(bucket, file_hash):
     date =  bucket.get_key(file_hash).last_modified
     return date[:(date.index(":") - 2)]
 
-def upload_file(bucket, file_hash, f):
+def upload_file(bucket, file_hash, f, filename=""):
     # Create bucket key with filename
     key = bucket.new_key(file_hash)
     # Set content type
     # There is most certainly a better way to do this but w/e
-    content_type = mimetypes.guess_type(f.filename)[0]
+    if filename == "":
+        content_type = mimetypes.guess_type(f.filename)[0]
+    else:
+        content_type = mimetypes.guess_type(filename)[0]
     # Upload the file
     key.set_contents_from_file(f, headers={"Content-Type": content_type})
 

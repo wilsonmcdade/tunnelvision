@@ -22,12 +22,13 @@
                     <div class="carousel-item text-center">
                     {% endif %}
                         <img style="width:100%;" alt="{{ muralDetails['images'][loop.index-1]['alttext'] }}" src="{{ muralDetails['images'][loop.index-1]['imgurl'] }}">
+                        <div class="carousel-caption d-none d-md-block ">
+                            {% if muralDetails['images'][loop.index-1]['caption'] != None %}
+                            <p class="text-dark bg-light">{{ muralDetails['images'][loop.index-1]['caption'] }}</p>
+                            {% endif %}
+                            <p class="text-dark bg-light"><a href="{{ muralDetails['images'][loop.index-1]['fullsizeimage'] }}">Full Size Image</a></p>
+                        </div>
                     </div>
-                    {% if muralDetails['images'][loop.index-1]['caption'] != None %}
-                    <div class="carousel-caption d-none d-md-block ">
-                        <p class="text-dark bg-light">{{ muralDetails['images'][loop.index-1]['caption'] }}</p>
-                    </div>
-                    {% endif %}
                     {% endfor %}
                 </div>
                 
