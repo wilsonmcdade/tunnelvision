@@ -9,7 +9,8 @@ import hashlib
 import re
 from functools import wraps
 from random import shuffle
-from s3 import get_bucket, get_file_s3, upload_file, remove_file, get_file_list
+from PIL import Image
+from s3 import get_file, get_bucket, get_file_s3, upload_file, remove_file, get_file_list
 
 app = Flask(__name__)
 logging.info("Starting up...")
@@ -22,12 +23,10 @@ else:
 git_cmd = ['git', 'rev-parse', '--short', 'HEAD']
 app.config["GIT_REVISION"] = subprocess.check_output(git_cmd).decode('utf-8').rstrip()
 
-logging.info("Connecting to S3 Bucket {0}".format(app.config["BUCKET_NAME"]))
+print("Connecting to S3 Bucket {0}".format(app.config["BUCKET_NAME"]))
 s3_bucket = get_bucket(app.config["S3_URL"], app.config["S3_KEY"], app.config["S3_SECRET"], app.config["BUCKET_NAME"])
 
-files = get_file_list(s3_bucket)
-
-logging.info("Connecting to DB {0}".format(app.config["DBNAME"]))
+print("Connecting to DB {0}".format(app.config["DBNAME"]))
 conn = psycopg2.connect(**{
         "database": app.config["DBNAME"],
         "user": app.config["DBUSER"],
@@ -35,6 +34,13 @@ conn = psycopg2.connect(**{
         "host": app.config["DBHOST"],
         "port": app.config["DBPORT"]
     })
+
+def crop_center(pil_img, crop_width, crop_height):
+    img_width, img_height = pil_img.size
+    return pil_img.crop(((img_width - crop_width) // 2,
+                         (img_height - crop_height) // 2,
+                         (img_width + crop_width) // 2,
+                         (img_height + crop_height) // 2))
 
 def getAllMurals(cursor):
     cursor.execute("select id, title, notes, year, location, nextmuralid, artistKnown from murals order by id asc")
@@ -121,14 +127,15 @@ def handleMuralDBResp(cursor, dbResp):
         muralInfo["prevmuralid"] = prevmuralid[0]
     muralInfo["nextmuralid"] = dbResp[5]
 
-    cursor.execute("select images.imghash as imghash, images.ordering as ordering, images.caption AS caption, images.alttext AS alttext, images.id as id from images left join imageMuralRelation on images.id = imageMuralRelation.image_id where imageMuralRelation.mural_id = %s;", (dbResp[0], ))
+    cursor.execute("select images.imghash as imghash, images.ordering as ordering, images.caption AS caption, images.alttext AS alttext, images.id as id, images.fullsizehash from images left join imageMuralRelation on images.id = imageMuralRelation.image_id where imageMuralRelation.mural_id = %s;", (dbResp[0], ))
     images = cursor.fetchall()
 
     if (images != None):
         for image in images:
             if image[1] == 0:
                 muralInfo["primaryimage"] = get_file_s3(s3_bucket,image[0])
-            muralInfo["images"].append({"imgurl":get_file_s3(s3_bucket,image[0]),"ordering":image[1],"caption":image[2],"alttext":image[3], "id":image[4]})
+                continue
+            muralInfo["images"].append({"imgurl":get_file_s3(s3_bucket,image[0]),"ordering":image[1],"caption":image[2],"alttext":image[3], "id":image[4], "fullsizeimage":get_file_s3(s3_bucket,image[5])})
 
     for artist in artists:
         muralInfo["artists"].append({"name":artist[1],"id":artist[0]})
@@ -187,7 +194,7 @@ def getRandomImages(count):
     returnable = []
     cursor = conn.cursor()
 
-    cursor.execute("select images.imghash as imghash, images.ordering as ordering, images.caption AS caption, images.alttext AS alttext, images.id as id from images left join imageMuralRelation on images.id = imageMuralRelation.image_id where imageMuralRelation.mural_id > 3")
+    cursor.execute("select images.imghash as imghash, images.ordering as ordering, images.caption AS caption, images.alttext AS alttext, images.id as id from images left join imageMuralRelation on images.id = imageMuralRelation.image_id where images.ordering != 0")
     images = cursor.fetchall()
 
     if (images != None):
@@ -202,7 +209,6 @@ def debug_only(f):
     @wraps(f)
     def wrapped(**kwargs):
         if app.config["DEBUG"]:
-            print("umm")
             return f(**kwargs)
         return abort(404)
     return wrapped
@@ -313,7 +319,8 @@ def not_found(e):
 @debug_only
 def uploadNewImage(id):
     curs = conn.cursor()
-    count = 0
+    curs.execute("select count(*) from imageMuralRelation where mural_id = %s", (id, ))
+    count = int(curs.fetchone()[0])
     for f in request.files.items(multi=True):
         filename = secure_filename(f[1].filename)
         print(f[1].filename)
@@ -359,18 +366,88 @@ def upload():
         filename = secure_filename(f[1].filename)
         print(f[1].filename)
 
-        file_hash = hashlib.md5(f[1].read()).hexdigest()
+        fullsizehash = hashlib.md5(f[1].read()).hexdigest()
         f[1].seek(0)
 
-        curs.execute("select count(*) from images where imghash = %s",(file_hash, ))
+        curs.execute("select count(*) from images where imghash = %s",(fullsizehash, ))
         if (int(curs.fetchone()[0]) > 0):
-            print(file_hash)
+            print(fullsizehash)
             return render_template("404.html")
         
-        upload_file(s3_bucket, file_hash, f[1])
+        if (count == 0): # Take first image and make thumbnail
 
-        curs.execute("insert into images (imghash, ordering) values (%s, %s) returning id", (file_hash, count))
+            upload_file(s3_bucket, fullsizehash, f[1])
+            get_file(app.config["BUCKET_NAME"], fullsizehash, fullsizehash, app.config["S3_KEY"], app.config["S3_SECRET"])
+
+            with Image.open(fullsizehash) as im:
+                if (im.width == 256 or im.height == 256):
+                    # Already a thumbnail
+                    print("Already a thumbnail...")
+                    continue
+                im = crop_center(im, min(im.size), min(im.size))
+                im.thumbnail((256,256))
+
+                im = im.convert("RGB")
+                im.save(fullsizehash + ".thumbnail", "JPEG")
+
+            with open(fullsizehash + ".thumbnail", "rb") as tb:
+
+                file_hash = hashlib.md5(tb.read()).hexdigest()
+                tb.seek(0)
+
+                upload_file(s3_bucket, file_hash, tb, (fullsizehash + ".thumbnail"))
+                curs.execute("insert into images (imghash, ordering) values (%s, %s) returning id", (file_hash, 0))
+                image_id = curs.fetchone()[0]
+                curs.execute("insert into imageMuralRelation (image_id, mural_id) values (%s, %s)", (image_id,mural_id))
+
+
+                print(get_file_s3(s3_bucket, file_hash))
+
+            conn.commit()
+
+            count += 1
+        
+        f[1].seek(0)
+        upload_file(s3_bucket, fullsizehash, f[1])
+
+        print("Fetching file {0}".format(fullsizehash))
+        get_file(app.config["BUCKET_NAME"], fullsizehash, fullsizehash, app.config["S3_KEY"], app.config["S3_SECRET"])
+
+        curs.execute("insert into images (imghash, ordering) values (%s, %s) returning id", (fullsizehash, count))
         img_id = curs.fetchone()[0]
+
+        with Image.open(fullsizehash) as im:
+            if (im.width == 1200 or im.height == 1200):
+                # image has already been resized
+                print("Already resized...")
+                continue
+
+            width = (im.width * app.config["MAX_IMG_HEIGHT"]) // im.height
+
+            (width, height) = (width, app.config["MAX_IMG_HEIGHT"])
+            print(width, height)
+            im = im.resize((width,height))
+
+            im = im.convert("RGB")
+            im.save(fullsizehash + ".resized", "JPEG")
+
+
+        with open(fullsizehash, "rb") as image:
+
+            fullsizehash = hashlib.md5(image.read()).hexdigest()
+
+            curs.execute("update images set fullsizehash = %s where id = %s", (fullsizehash, img_id))
+
+        with open((fullsizehash + ".resized"), "rb") as rs:
+
+            file_hash = hashlib.md5(rs.read()).hexdigest()
+            rs.seek(0)
+            
+            upload_file(s3_bucket, file_hash, rs, (fullsizehash + ".resized"))
+
+            print(get_file_s3(s3_bucket, file_hash))
+
+            curs.execute("update images set imghash = %s, ordering = %s where id = %s", (file_hash, count, img_id))
 
         curs.execute("insert into imageMuralRelation (image_id, mural_id) values (%s, %s)", (img_id,mural_id))
 
@@ -400,6 +477,9 @@ def admin():
 
 if __name__ == "__main__":
     try:
-        app.run(host="0.0.0.0", port=8080)
+        if not app.config["DEBUG"]:
+            app.run(host="0.0.0.0", port=8080)
+        else:
+            app.run()
     finally:
         conn.close()
