@@ -215,7 +215,7 @@ def debug_only(f):
 
 @app.route("/")
 def home():
-    return render_template("home.html", pageTitle="Tunnel Vision: RIT's Overlooked Art Museum", muralHighlights=getRandomImages(0),murals=getAllMurals(conn.cursor()))
+    return render_template("home.html", pageTitle="RIT's Overlooked Art Museum", muralHighlights=getRandomImages(0),murals=getAllMurals(conn.cursor()))
 
 @app.route("/murals/<id>")
 def mural(id):
