@@ -215,7 +215,15 @@ def debug_only(f):
 
 @app.route("/")
 def home():
-    return render_template("home.html", pageTitle="RIT's Overlooked Art Museum", muralHighlights=getRandomImages(0),murals=getAllMurals(conn.cursor()))
+    return render_template("home.html", pageTitle="RIT's Overlooked Art Museum", muralHighlights=getRandomImages(0), murals=getAllMurals(conn.cursor()))
+
+@app.route('/about')
+def about():
+    return render_template("about.html", muralHighlights=getRandomImages(0))
+
+@app.route("/catalog")
+def catalog():
+    return render_template("catalog.html", murals=getAllMurals(conn.cursor()))
 
 @app.route("/murals/<id>")
 def mural(id):
@@ -246,10 +254,6 @@ def year(year):
 @debug_only
 def edit(id):
     return render_template("edit.html", muralDetails=getMural(conn.cursor(), id))
-
-@app.route('/about')
-def about():
-    return render_template("about.html", muralHighlights=getRandomImages(0))
 
 @app.route('/deleteArtist/<id>', methods=["POST"])
 @debug_only
