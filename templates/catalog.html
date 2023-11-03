@@ -1,93 +1,45 @@
 {% extends "header.html" %}
-{% block content %}
-<style>
-    .carousel-full-background {
-        position: relative;
-        width: 100%;
-        height: 100vh; /* Adjust height to your preference */
-        overflow: hidden;
-    }
-
-    .carousel-full-background .carousel-inner {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-    }
-
-    .carousel-full-background .carousel-inner .carousel-item {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        user-select: none;
-        pointer-events: none;
-    }
-
-    .carousel-full-background .carousel-inner .carousel-item img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-
-    .carousel-full-background .carousel-inner .carousel-item {
-        transition: 1.2s ease;
-    }
-
-    .carousel-full-background .carousel-inner .carousel-item.active {
-        transition: 1.2s ease;
-    }
-
-    .carousel-control-prev, .carousel-control-next {
-        font-size: 30px;
-        color: #fff;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
-        opacity: 0.7;
-    }
-
-    .carousel-control-prev-icon, .carousel-control-next-icon {
-        padding: 5px;
-        background-color: rgba(0, 0, 0, 0.9);
-        border-radius: 3px;
-    }
-
-    .carousel-control-prev:hover, .carousel-control-next:hover {
-        background: rgba(0,0,0,0.2);
-        transition: 0.2s ease;
-    }
-
-    .banner-text {
-        position: absolute;
-        bottom: 0;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        z-index: 2;
-        text-align: center;
-        color: white;
-    }
-
-    .banner-text h2 {
-        background: rgba(247, 105, 2, 0.6);
-        padding: 10px;
-        border-radius: 5px;
-    }
-</style>
-
-<script>
-    // Mod carousel settings (if you need)
-    document.addEventListener('DOMContentLoaded', function() {
-        var myCarousel = document.getElementById('muralImagesCaptions');
-        var carousel = new bootstrap.Carousel(myCarousel, {
-            interval: 4000, // Set the interval to 4 seconds (adjust as needed)
-        });
-    });
-</script>
+{% block dynamic_content %}
 
 <div class="container text-center">
+    <div class="row mb-3">
+        <div class="input-group">
+            <a class="input-group-text" href="#search">
+                <img src="static\images\search.png" alt="Search Icon" style="width: 20px; height: 20px;">
+            </a>
+            <input type="text" class="form-control" placeholder="Search...">
+            <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#filterForm" aria-expanded="false" aria-controls="filterForm">
+                <img src="static\images\filter.png" alt="Filter Icon" style="width: 20px; height: 20px; margin-bottom: 2px; filter: invert(1);">
+            </button>
+        </div>
+
+        <div class="collapse my-2" id="filterForm">
+            <form>
+                <div class="row g-3">
+                    <div class="col">
+                        <label for="inputYear" class="form-label">Year</label>
+                        <input type="text" class="form-control" id="inputYear" placeholder="Enter year">
+                    </div>
+                    <div class="col">
+                        <label for="inputLocation" class="form-label">Location</label>
+                        <input type="text" class="form-control" id="inputLocation" placeholder="Enter location">
+                    </div>
+                    <div class="col">
+                        <label for="inputPainter" class="form-label">Painter</label>
+                        <input type="text" class="form-control" id="inputPainter" placeholder="Enter painter">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary mt-2">Apply Filter</button>
+            </form>
+        </div>
+        
+    </div>
+
     <div class="row row-cols-5">
         {% for mural in murals %}
             {{ muralcard(mural) }}
         {% endfor %}
     </div>
 </div>
+
 {% endblock %}

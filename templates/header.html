@@ -22,6 +22,11 @@
             body {
                 background-color: rgb(253, 253, 253);
             }
+            
+            .content-margin {
+                margin-top: 80px; /* Adjust this margin top to match your header height */
+            }
+
             .navbar {
                 background-color: rgba(0, 0, 0, 0.8);
             }
@@ -31,15 +36,21 @@
             .navbar .navbar-toggler {
                 color: #ffffff;
             }
+
             .navbar-collapse {
                 flex-grow: 0 !important;
             }
+
             .navbar-brand {
                 font-size: 2rem;
                 margin-top: 0;
                 margin-bottom: 0.5rem;
                 font-weight: 500;
                 line-height: 1.2;
+            }
+
+            .active h4 a {
+                color: rgb(247, 105, 2);
             }
         </style>
     </head>
@@ -54,10 +65,8 @@
                 </button>
                 <div class="collapse navbar-collapse" id="navbarNav">
                     <ul class="navbar-nav me-auto">
-                        <li class="nav-item active">
-                            <h4>
-                                <a class="nav-link" aria-current="page" href="/">Home</a>
-                            </h4>
+                        <li class="nav-item">
+                            <h4><a class="nav-link" aria-current="page" href="/">Home</a></h4>
                         </li>
                         <li class="nav-item">
                             <h4><a class="nav-link" aria-current="page" href="/about">About</a></h4>
@@ -73,14 +82,29 @@
                         <img src="https://assets.csh.rit.edu/pubsite/csh_logo_square.svg"  style="width: 30px;">
                     </a>
                     <a class="nav-link" href="https://github.com/wilsonmcdade/tunnelvision" target="_blank">
-                        <img src="static/images/github.svg" style="width: 30px; filter: invert(1);">
+                        <img src="/static/images/github.svg" style="width: 30px; filter: invert(1);">
                     </a>
                 </div>
             </div>
         </nav>
-        <div class="center">{% block content %} {% endblock %}</div>
+        {% block content %}
+        <div class="center {% if 'home' not in request.path %}content-margin{% endif %}">
+            {% block dynamic_content %}{% endblock %}
+        </div>
+        {% endblock %}
     </body>
-    
+    <script>
+        var urlPath = window.location.pathname;
+        var navLinks = document.querySelectorAll('.navbar-nav a');
+
+        // Loop through the anchor tags to set the 'active' class
+        // Disgusting but whatever :/
+        navLinks.forEach(function(link) {
+            if (link.getAttribute('href') === urlPath) {
+                link.parentElement.parentElement.classList.add('active');
+            }
+        });
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </html>
 
