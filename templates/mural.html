@@ -1,5 +1,12 @@
-{% extends "header.html" %} {% block content %}
+{% extends "header.html" %}
+{% block dynamic_content %}
 
+<style>
+    .no-a-styles {
+        text-decoration: none;
+        color: white;
+    }
+</style>
 <div class="container">
     <h1>{{ muralDetails["title"] }} </h1>
     <div class="row">
@@ -21,12 +28,12 @@
                     {% else %}
                     <div class="carousel-item text-center">
                     {% endif %}
-                        <img style="width:100%;" alt="{{ muralDetails['images'][loop.index-1]['alttext'] }}" src="{{ muralDetails['images'][loop.index-1]['imgurl'] }}">
+                        <img style="width:100%; height: 700px; object-fit: cover;" alt="{{ muralDetails['images'][loop.index-1]['alttext'] }}" src="{{ muralDetails['images'][loop.index-1]['imgurl'] }}">
                         <div class="carousel-caption d-none d-md-block ">
                             {% if muralDetails['images'][loop.index-1]['caption'] != None %}
-                            <p class="text-dark bg-light">{{ muralDetails['images'][loop.index-1]['caption'] }}</p>
+                            <p class="banner-value no-a-styles">{{ muralDetails['images'][loop.index-1]['caption'] }}</p>
                             {% endif %}
-                            <p class="text-dark bg-light"><a href="{{ muralDetails['images'][loop.index-1]['fullsizeimage'] }}">Full Size Image</a></p>
+                            <p class="banner-value"><a class="no-a-styles" href="{{ muralDetails['images'][loop.index-1]['fullsizeimage'] }}">Full Size Image</a></p>
                         </div>
                     </div>
                     {% endfor %}
