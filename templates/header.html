@@ -104,7 +104,7 @@
             </div>
         </nav>
         {% block content %}
-        <div class="center {% if 'home' not in request.path %}content-margin{% endif %}">
+        <div class="center {% if 'home' not in request.path %}center container content-margin{% endif %}">
             {% block dynamic_content %}{% endblock %}
         </div>
         {% endblock %}

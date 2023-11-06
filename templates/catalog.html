@@ -3,42 +3,26 @@
 
 <div class="container text-center">
     <div class="row mb-3">
-        <div class="input-group">
-            <a class="input-group-text" href="#search">
-                <img src="static\images\search.png" alt="Search Icon" style="width: 20px; height: 20px;">
-            </a>
-            <input type="text" class="form-control" placeholder="Search...">
-            <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#filterForm" aria-expanded="false" aria-controls="filterForm">
-                <img src="static\images\filter.png" alt="Filter Icon" style="width: 20px; height: 20px; margin-bottom: 2px; filter: invert(1);">
-            </button>
-        </div>
-
-        <div class="collapse my-2" id="filterForm">
-            <form>
-                <div class="row g-3">
-                    <div class="col">
-                        <input type="text" class="form-control" id="inputYear" placeholder="Enter year">
-                    </div>
-                    <div class="col">
-                        <input type="text" class="form-control" id="inputLocation" placeholder="Enter location">
-                    </div>
-                    <div class="col">
-                        <input type="text" class="form-control" id="inputPainter" placeholder="Enter painter">
-                    </div>
-                    <div class="col-auto">
-                        <button type="submit" class="btn btn-primary">Apply</button>
-                    </div>
-                </div>
-            </form>
-        </div>
-        
+        <form action="/catalog">
+            <div class="input-group">
+                <label class="visually-hidden" for="q">Search:</label>
+                <input name="q" id="q" type="text" class="form-control" {% if not q %} placeholder="Search..." {% else %} value="{{ q }}" {% endif %}>
+                <button class="btn btn-dark" type="submit" aria-expanded="false">
+                    <img src="static\images\search.png" alt="Search Icon" style="width: 20px; height: 20px; margin-bottom: 2px; filter: invert(1);">
+                </button>
+            </div>
+        </form>
     </div>
 
+    {% if murals | length > 0 %}
     <div class="row row-cols-5">
         {% for mural in murals %}
             {{ muralcard(mural) }}
         {% endfor %}
     </div>
+    {% else %}
+    <h2>No Murals Found</h2>
+    {% endif %}
 </div>
 
 {% endblock %}

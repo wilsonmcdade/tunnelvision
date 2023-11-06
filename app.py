@@ -42,8 +42,20 @@ def crop_center(pil_img, crop_width, crop_height):
                          (img_width + crop_width) // 2,
                          (img_height + crop_height) // 2))
 
+def searchMurals(query):
+    curs = conn.cursor()
+    curs.execute("select id, title, notes, year, location, nextmuralid, artistKnown from murals where text_search_index @@ websearch_to_tsquery(%s) order by id;", (query, ))
+
+    murals = curs.fetchmany(150)
+    returnable = []
+
+    for mural in murals:
+        returnable.append(handleMuralDBResp(curs, mural))
+
+    return returnable
+
 def getAllMurals(cursor):
-    cursor.execute("select id, title, notes, year, location, nextmuralid, artistKnown from murals order by id asc")
+    cursor.execute("select id, title, notes, year, location, nextmuralid, artistKnown from murals order by title asc")
     murals = cursor.fetchmany(150)
     returnable = []
 
@@ -221,9 +233,14 @@ def home():
 def about():
     return render_template("about.html", muralHighlights=getRandomImages(0))
 
+@app.route("/catalog?q=<query>")
 @app.route("/catalog")
 def catalog():
-    return render_template("catalog.html", murals=getAllMurals(conn.cursor()))
+    query = request.args.get("q")
+    if query == None:
+        return render_template("catalog.html", q=query, murals=getAllMurals(conn.cursor()))
+    else:
+        return render_template("catalog.html", q=query, murals=searchMurals(query))
 
 @app.route("/murals/<id>")
 def mural(id):
