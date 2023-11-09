@@ -15,13 +15,16 @@
     </div>
 
     {% if murals | length > 0 %}
-    <div class="row row-cols-5">
-        {% for mural in murals %}
-            {{ muralcard(mural) }}
-        {% endfor %}
+    <div class="container-fluid">
+        <div class="row">
+            {% for mural in murals %}
+                {{ muralcard(mural) }}
+            {% endfor %}
+        </div>
     </div>
     {% else %}
     <h2>No Murals Found</h2>
+    <a href="/catalog"><h2>Clear query</h2></a>
     {% endif %}
 </div>
 

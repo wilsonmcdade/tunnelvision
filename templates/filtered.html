@@ -6,11 +6,14 @@
 <h3>{{ subHeading["notes"] }}</h3>
 {% endif %}
 
+<p><a href="/catalog">Back to Catalog</a></p>
 
-<div class="row row-cols-5">
-{% for mural in murals: %}
-    {{ muralcard(mural) }}
-{% endfor %}
+<div class="container-fluid">
+    <div class="row text-center">
+        {% for mural in murals: %}
+            {{ muralcard(mural) }}
+        {% endfor %}
+    </div>
 </div>
 
 {% endblock %}
