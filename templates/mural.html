@@ -1,9 +1,40 @@
-{% extends "header.html" %} {% block content %}
+{% extends "header.html" %}
+{% block dynamic_content %}
 
+<style>
+    .no-a-styles {
+        text-decoration: none;
+        color: white;
+    }
+    .img-zoom-container {
+    position: relative;
+    }
+
+    .img-zoom-lens {
+    position: absolute;
+    border: 1px solid #d4d4d4;
+    /*set the size of the lens:*/
+    width: 40px;
+    height: 40px;
+    }
+
+    .img-zoom-result {
+    border: 1px solid #d4d4d4;
+    /*set the size of the result div:*/
+    width: 300px;
+    height: 300px;
+    }
+
+    .main-img {
+        width:100%;
+        height: 700px;
+        object-fit: contain;
+    }
+</style>
 <div class="container">
     <h1>{{ muralDetails["title"] }} </h1>
     <div class="row">
-        <div class="col-8">
+        <div class="col-lg-8 col-md-12">
             <div id="muralImagesCaptions" class="carousel slide" data-bs-ride="carousel">
                 <div class="carousel-indicators">
                     {% for image in muralDetails["images"]: %}
@@ -21,12 +52,12 @@
                     {% else %}
                     <div class="carousel-item text-center">
                     {% endif %}
-                        <img style="width:100%;" alt="{{ muralDetails['images'][loop.index-1]['alttext'] }}" src="{{ muralDetails['images'][loop.index-1]['imgurl'] }}">
+                        <img class="main-img" alt="{{ muralDetails['images'][loop.index-1]['alttext'] }}" src="{{ muralDetails['images'][loop.index-1]['imgurl'] }}">
                         <div class="carousel-caption d-none d-md-block ">
                             {% if muralDetails['images'][loop.index-1]['caption'] != None %}
-                            <p class="text-dark bg-light">{{ muralDetails['images'][loop.index-1]['caption'] }}</p>
+                            <p class="banner-value no-a-styles">{{ muralDetails['images'][loop.index-1]['caption'] }}</p>
                             {% endif %}
-                            <p class="text-dark bg-light"><a href="{{ muralDetails['images'][loop.index-1]['fullsizeimage'] }}">Full Size Image</a></p>
+                            <p class="banner-value"><a class="no-a-styles" href="{{ muralDetails['images'][loop.index-1]['fullsizeimage'] }}">Full Size Image</a></p>
                         </div>
                     </div>
                     {% endfor %}
@@ -63,13 +94,19 @@
             </ul>
             {% endif %}
         </div>
-        {% if muralDetails['prevmuralid'] != None: %}
-        <p><a href="{{ muralDetails['prevmuralid'] }}">Prev</a></p>
-        {% endif %}
+        <div class="row">
+            <div class="col-7">
+                {% if muralDetails['prevmuralid'] != None: %}
+                <a class="btn btn-primary" role="button" href="{{ muralDetails['prevmuralid'] }}">Prev</a>
+                {% endif %}
+            </div>
+            <div class="col-5">
 
-        {% if muralDetails['nextmuralid'] != None: %}
-        <a href="{{ muralDetails['nextmuralid'] }}">Next</a>
-        {% endif %}
+                {% if muralDetails['nextmuralid'] != None: %}
+                <a class="btn btn-primary" role="button" href="{{ muralDetails['nextmuralid'] }}">Next</a>
+                {% endif %}
+            </div>
+        </div>
     </div>
 </div>
 

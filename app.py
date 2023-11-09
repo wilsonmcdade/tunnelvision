@@ -1,6 +1,6 @@
 import os
 import subprocess
-from flask import Flask, render_template, request, redirect, abort
+from flask import Flask, render_template, request, redirect, abort, url_for
 import psycopg2
 import logging
 from werkzeug.utils import secure_filename
@@ -42,8 +42,20 @@ def crop_center(pil_img, crop_width, crop_height):
                          (img_width + crop_width) // 2,
                          (img_height + crop_height) // 2))
 
+def searchMurals(query):
+    curs = conn.cursor()
+    curs.execute("select id, title, notes, year, location, nextmuralid, artistKnown from murals where text_search_index @@ websearch_to_tsquery(%s) order by id;", (query, ))
+
+    murals = curs.fetchmany(150)
+    returnable = []
+
+    for mural in murals:
+        returnable.append(handleMuralDBResp(curs, mural))
+
+    return returnable
+
 def getAllMurals(cursor):
-    cursor.execute("select id, title, notes, year, location, nextmuralid, artistKnown from murals order by id asc")
+    cursor.execute("select id, title, notes, year, location, nextmuralid, artistKnown from murals order by title asc")
     murals = cursor.fetchmany(150)
     returnable = []
 
@@ -203,7 +215,7 @@ def getRandomImages(count):
 
     shuffle(returnable)
 
-    return returnable
+    return returnable[:8]
 
 def debug_only(f):
     @wraps(f)
@@ -215,22 +227,35 @@ def debug_only(f):
 
 @app.route("/")
 def home():
-    return render_template("home.html", pageTitle="Tunnel Vision: RIT's Overlooked Art Museum", muralHighlights=getRandomImages(0),murals=getAllMurals(conn.cursor()))
+    return render_template("home.html", pageTitle="RIT's Overlooked Art Museum", muralHighlights=getRandomImages(0), murals=getAllMurals(conn.cursor()))
+
+@app.route('/about')
+def about():
+    return render_template("about.html", muralHighlights=getRandomImages(0))
+
+@app.route("/catalog?q=<query>")
+@app.route("/catalog")
+def catalog():
+    query = request.args.get("q")
+    if query == None:
+        return render_template("catalog.html", q=query, murals=getAllMurals(conn.cursor()))
+    else:
+        return render_template("catalog.html", q=query, murals=searchMurals(query))
 
 @app.route("/murals/<id>")
 def mural(id):
     if (checkMuralExists(conn.cursor(), id)):
         return render_template("mural.html", muralDetails=getMural(conn.cursor(), id))
     else:
-        return render_template("404.html")
+        return render_template("404.html"), 404
     
 @app.route("/artist/<id>")
 def artist(id):
     if (checkArtistExists(conn.cursor(), id)):
         return render_template("filtered.html", pageTitle="Artist Search", subHeading=getArtistDetails(conn.cursor(), id), murals=getAllMuralsFromArtist(conn.cursor(), id))
     else:
-        return render_template("404.html")
-    
+        return render_template("404.html"), 404
+
 @app.route("/year/<year>")
 def year(year):
     if (checkYearExists(conn.cursor(), year)):
@@ -240,16 +265,12 @@ def year(year):
             readableYear = year
         return render_template("filtered.html", pageTitle="Murals from {0}".format(readableYear), subHeading=None, murals=getAllMuralsFromYear(conn.cursor(), year))
     else:
-        return render_template("404.html")
+        return render_template("404.html"), 404
     
 @app.route('/edit/<id>')
 @debug_only
 def edit(id):
     return render_template("edit.html", muralDetails=getMural(conn.cursor(), id))
-
-@app.route('/about')
-def about():
-    return render_template("about.html", muralHighlights=getRandomImages(0))
 
 @app.route('/deleteArtist/<id>', methods=["POST"])
 @debug_only
@@ -263,7 +284,7 @@ def deleteArtist(id):
         conn.commit()
         return redirect("/admin")
     else:
-        return render_template("404.html")
+        return render_template("404.html"), 404
 
 @app.route('/delete/<id>', methods=["POST"])
 @debug_only
@@ -285,7 +306,7 @@ def delete(id):
         conn.commit()
         return redirect("/admin")
     else:
-        return render_template("404.html")
+        return render_template("404.html"), 404
     
 @app.route('/editimage/<id>', methods=["POST"])
 @debug_only
@@ -313,7 +334,7 @@ def deleteImage(id):
 
 @app.errorhandler(HTTPException)
 def not_found(e):
-    return render_template("404.html")
+    return render_template("404.html"), 404
 
 @app.route("/uploadimage/<id>", methods=["POST"])
 @debug_only
@@ -331,7 +352,7 @@ def uploadNewImage(id):
         curs.execute("select count(*) from images where imghash = %s", (file_hash, ))
         if (int(curs.fetchone()[0]) > 0):
             print(file_hash)
-            return render_template("404.html")
+            return render_template("404.html"), 404
         
         upload_file(s3_bucket, file_hash, f[1])
 
@@ -356,7 +377,7 @@ def upload():
 
     artistKnown = True if request.form.get('artistknown','on') else False
     if not (request.form["year"].isdigit()):
-        return render_template("404.html")
+        return render_template("404.html"), 404
 
     curs.execute("insert into murals (title, artistKnown, notes, year, location) values (%s, %s, %s, %s, %s) returning id;",(request.form["title"],artistKnown,request.form["notes"], request.form["year"], request.form["location"]))
     mural_id = curs.fetchone()[0]
@@ -372,7 +393,7 @@ def upload():
         curs.execute("select count(*) from images where imghash = %s",(fullsizehash, ))
         if (int(curs.fetchone()[0]) > 0):
             print(fullsizehash)
-            return render_template("404.html")
+            return render_template("404.html"), 404
         
         if (count == 0): # Take first image and make thumbnail
 

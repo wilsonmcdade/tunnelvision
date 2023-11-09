@@ -1,6 +1,6 @@
 {% macro muralcard(mural) %}
-<div class="card">
-    <div class="col">
+<div class="card col-lg-2 col-md-6 col-sm-12 col-xs-12">
+    <div>
         <a style="text-decoration: none;" href="/murals/{{ mural['id'] }}">
         <img class="card-img-top" src="{{ mural['primaryimage'] }}">
         <div class="card-body">
@@ -18,32 +18,113 @@
     <head>
         <title>Tunnel Vision</title>
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.png') }}">
+        <meta property="og:title" content="Tunnel Vision" />
+        <meta property="og:description" content="Tunnelvision is an exhibition of RIT's residence hall murals." />
+        <style>
+            body {
+                background-color: rgb(253, 253, 253);
+            }
+            
+            .content-margin {
+                margin-top: 100px; /* Adjust this margin top to match your header height */
+            }
+
+            .navbar {
+                background-color: rgba(0, 0, 0, 0.8);
+            }
+            .navbar a {
+                color: #ffffff;
+            }
+            .navbar .navbar-toggler {
+                color: #ffffff;
+            }
+
+            .navbar-collapse {
+                flex-grow: 0 !important;
+            }
+
+            .navbar-brand {
+                font-size: 1.5rem;
+                margin-top: 0;
+                margin-bottom: 0.5rem;
+                font-weight: 500;
+                line-height: 1.2;
+            }
+
+            .active h4 a {
+                color: rgb(247, 105, 2);
+            }
+
+            .banner-text {
+                position: absolute;
+                bottom: 0;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                z-index: 2;
+                text-align: center;
+                color: white;
+            }
+
+            .banner-value {
+                background: rgba(247, 105, 2, 0.6);
+                padding: 10px;
+                border-radius: 5px;
+            }
+        </style>
     </head>
     <body>
-        <nav class="navbar bg-body-secondary">
+        <nav class="navbar navbar-expand-sm navbar-dark fixed-top">
             <div class="container">
                 <a class="navbar-brand" href="/">
-                    Tunnel Vision: RIT's Overlooked Art Museum
+                    Tunnel <span style="color: rgb(247, 105, 2);">Vision</span>
                 </a>
-                  <ul class="navbar-nav">
-                    <li class="nav-item">
-                      <a class="nav-link active" aria-current="page" href="/">Home</a>
-                    </li>
-                    <li class="nav-item">
-                      <a class="nav-link active" aria-current="page" href="/about">About</a>
-                    </li>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav me-auto">
+                        <li class="nav-item">
+                            <h4><a class="nav-link" style="font-size: 1.25rem" aria-current="page" href="/">Home</a></h4>
+                        </li>
+                        <li class="nav-item">
+                            <h4><a class="nav-link" style="font-size: 1.25rem" aria-current="page" href="/about">About</a></h4>
+                        </li>
+                        <li class="nav-item">
+                            <h4><a class="nav-link" style="font-size: 1.25rem" aria-current="page" href="/catalog">Catalog</a></h4>
+                        </li>
+                        
                     </ul>
-            
+                </div>
+                <div class="d-flex gap-3">
+                    <a class="nav-link" href="https://csh.rit.edu/" target="_blank">
+                        <img src="https://assets.csh.rit.edu/pubsite/csh_logo_square.svg"  style="width: 30px;">
+                    </a>
+                    <a class="nav-link" href="https://github.com/wilsonmcdade/tunnelvision" target="_blank">
+                        <img src="/static/images/github.svg" style="width: 30px; filter: invert(1);">
+                    </a>
+                </div>
             </div>
         </nav>
-        <div class="container-lg center mt-4">{% block content %} {% endblock %}</div>
-        <div class="text-center">
-            <p><a href="https://github.com/wilsonmcdade/tunnelvision">Github</a></p>
+        {% block content %}
+        <div class="center {% if 'home' not in request.path %}center container content-margin{% endif %}">
+            {% block dynamic_content %}{% endblock %}
         </div>
+        {% endblock %}
     </body>
+    <script>
+        var urlPath = window.location.pathname;
+        var navLinks = document.querySelectorAll('.navbar-nav a');
 
+        // Loop through the anchor tags to set the 'active' class
+        // Disgusting but whatever :/
+        navLinks.forEach(function(link) {
+            if (link.getAttribute('href') === urlPath) {
+                link.parentElement.parentElement.classList.add('active');
+            }
+        });
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
 </html>
 
 {% endblock %}

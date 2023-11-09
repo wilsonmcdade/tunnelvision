@@ -1,15 +1,19 @@
-{% extends "header.html" %} {% block content %}
+{% extends "header.html" %}
+{% block dynamic_content %}
 
 <h1>{{ pageTitle }}: {{ subHeading["name"] }}</h1>
 {% if subHeading["notes"] != None %}
 <h3>{{ subHeading["notes"] }}</h3>
 {% endif %}
 
+<p><a href="/catalog">Back to Catalog</a></p>
 
-<div class="row row-cols-5">
-{% for mural in murals: %}
-    {{ muralcard(mural) }}
-{% endfor %}
+<div class="container-fluid">
+    <div class="row text-center">
+        {% for mural in murals: %}
+            {{ muralcard(mural) }}
+        {% endfor %}
+    </div>
 </div>
 
 {% endblock %}

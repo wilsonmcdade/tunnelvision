@@ -1,45 +1,19 @@
-{% extends "header.html" %} {% block content %}
-
-
+{% extends "header.html" %} 
+{% block dynamic_content %}
 
 <div class="container text-center">
     <h1>{{ pageTitle }}</h1>
-    <div id="muralImagesCaptions" class="carousel slide mb-3" data-bs-ride="carousel">
-        <div class="carousel-indicators">
-            {% for image in muralHighlights: %}
-            {% if loop.index == 1 %}
-                <button type="button" data-bs-target="muralImagesCaptions" data-bs-slide-to="{{ loop.index-1 }}" class="active" aria-current="true" aria-label="Slide {{ loop.index-1 }}"></button>
-            {% else %}
-                <button type="button" data-bs-target="muralImagesCaptions" data-bs-slide-to="{{ loop.index-1 }}" aria-label="Slide {{ loop.index-1 }}"></button>
-            {% endif %}
-            {% endfor %}
-        </div>
-        <div class="carousel-inner">
-            {% for image in muralHighlights: %}
-            {% if loop.index == 1 %}
-            <div class="carousel-item active">
-            {% else %}
-            <div class="carousel-item text-center">
-            {% endif %}
-                <img style="height:25rem;" alt="{{ muralHighlights[loop.index-1]['alttext'] }}" src="{{ muralHighlights[loop.index-1]['imgurl'] }}">
-            </div>
-            {% endfor %}
-        </div>
-        {% if muralHighlights|length > 1 %}
-        <button class="carousel-control-prev" type="button" data-bs-target="#muralImagesCaptions" data-bs-slide="prev">
-          <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-          <span class="visually-hidden">Previous</span>
-        </button>
-        <button class="carousel-control-next" type="button" data-bs-target="#muralImagesCaptions" data-bs-slide="next">
-          <span class="carousel-control-next-icon" aria-hidden="true"></span>
-          <span class="visually-hidden">Next</span>
-        </button>
-        {% endif %}
-    </div>
-    <h2>What's this all about?</h2>
-    <div class="text-left">
-        <p>"Tunnel Vision" is a project created by <a href="https://wmcda.de">Wilson McDade</a> </p>
-    </div>
-</div>
 
+    <!-- Just threw together a boilerplate -->
+    <div class="container my-5">
+        <div class="row align-items-middle align-middle">
+                <div class="col-md-12">
+                        <p>"Tunnel Vision" is created by <a href="https://wmcda.de">Wilson McDade</a> to highlight the tunnels in RIT's residence halls.</p>
+                        <p>Special Thanks to Erin Monahan and Beckett Jensen for helping to make this project possible.</p>
+                </div>
+        </div>
+    </div>
+
+
+</div>
 {% endblock %}
