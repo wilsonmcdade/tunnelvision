@@ -75,7 +75,7 @@
                 {% endif %}
             </div>
         </div>
-        <div class="col-4">
+        <div class="col-lg-4 col-md-12">
             {% if muralDetails["notes"] != '' %}
             <h3>Notes:</h3>
             <p>{{ muralDetails["notes"] }} </p>
@@ -93,7 +93,31 @@
             {% endfor %}
             </ul>
             {% endif %}
-        </div>
+
+            <div class="accordion" id="accordionExample">
+                <div class="accordion-item">
+                <h2 class="accordion-header" id="headingOne">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-controls="collapseOne">
+                    Suggestion?
+                    </button>
+                </h2>
+                    <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
+                        <div class="accordion-body">
+                            <div class="container">
+                                <form action="/suggestion" method="post" enctype="multipart/form-data">
+                                    <div class="mb-3">
+                                        <label for="notes" class="form-label">Notes</label>
+                                        <input type="text" class="form-control" id="notes" name="notes" required>
+                                        <input type="text" class="visually-hidden" id="muralid" name="muralid" value="{{ muralDetails['id'] }}">
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Submit</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         <div class="row">
             <div class="col-7">
                 {% if muralDetails['prevmuralid'] != None: %}

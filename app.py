@@ -10,6 +10,7 @@ import re
 from functools import wraps
 from random import shuffle
 from PIL import Image
+from datetime import datetime, timezone
 from s3 import get_file, get_bucket, get_file_s3, upload_file, remove_file, get_file_list
 
 app = Flask(__name__)
@@ -224,6 +225,20 @@ def debug_only(f):
             return f(**kwargs)
         return abort(404)
     return wrapped
+
+@app.route("/suggestion", methods=["POST"])
+def submit_suggestion():
+    print(request.form)
+
+    curs = conn.cursor()
+
+    dt = datetime.now(timezone.utc)
+    print(dt)
+
+    curs.execute("insert into feedback (notes, time, mural_id) values (%s, %s, %s);", (request.form["notes"], str(dt) ,request.form["muralid"]))
+
+    conn.commit()
+    return redirect("/catalog")
 
 @app.route("/")
 def home():
