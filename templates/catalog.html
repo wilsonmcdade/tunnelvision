@@ -8,7 +8,7 @@
                 <label class="visually-hidden" for="q">Search:</label>
                 <input name="q" id="q" type="text" class="form-control" {% if not q %} placeholder="Search..." {% else %} value="{{ q }}" {% endif %}>
                 <button class="btn btn-dark" type="submit" aria-expanded="false">
-                    <img src="static\images\search.png" alt="Search Icon" style="width: 20px; height: 20px; margin-bottom: 2px; filter: invert(1);">
+                    <img src="{{ url_for('static', filename='images/search.png') }}" alt="Search Icon" style="width: 20px; height: 20px; margin-bottom: 2px; filter: invert(1);">
                 </button>
             </div>
         </form>
@@ -18,7 +18,11 @@
     <div class="container-fluid">
         <div class="row">
             {% for mural in murals %}
-                {{ muralcard(mural) }}
+                {% if loop.index is divisibleby 18 %}
+                    {{ muralcard(mural, True, 1) }}
+                {% else %}
+                    {{ muralcard(mural) }}
+                {% endif %}
             {% endfor %}
         </div>
     </div>
