@@ -57,7 +57,7 @@ def searchMurals(query):
 
 def getAllMurals(cursor):
     cursor.execute("select id, title, notes, year, location, nextmuralid, artistKnown from murals order by title asc")
-    murals = cursor.fetchmany(150)
+    murals = cursor.fetchmany(200)
     returnable = []
 
     for mural in murals:
