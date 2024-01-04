@@ -55,9 +55,20 @@ def searchMurals(query):
 
     return returnable
 
+def getMuralsPaginated(pageNum):
+    curs = conn.cursor()
+    curs.execute("select id, title, notes, year, location, nextmuralid, artistKnown from murals order by title asc offset %s limit %s", (app.config["ITEMSPERPAGE"] * pageNum, app.config["ITEMSPERPAGE"]))
+    murals = curs.fetchmany(18)
+    returnable = []
+
+    for mural in murals:
+        returnable.append(handleMuralDBResp(curs, mural))
+
+    return returnable
+
 def getAllMurals(cursor):
     cursor.execute("select id, title, notes, year, location, nextmuralid, artistKnown from murals order by title asc")
-    murals = cursor.fetchmany(150)
+    murals = cursor.fetchmany(200)
     returnable = []
 
     for mural in murals:
@@ -242,7 +253,7 @@ def submit_suggestion():
 
 @app.route("/")
 def home():
-    return render_template("home.html", pageTitle="RIT's Overlooked Art Museum", muralHighlights=getRandomImages(0), murals=getAllMurals(conn.cursor()))
+    return render_template("home.html", pageTitle="RIT's Overlooked Art Museum", muralHighlights=getRandomImages(0))
 
 @app.route('/about')
 def about():
@@ -253,9 +264,19 @@ def about():
 def catalog():
     query = request.args.get("q")
     if query == None:
-        return render_template("catalog.html", q=query, murals=getAllMurals(conn.cursor()))
+        return render_template("catalog.html", q=query, murals=getMuralsPaginated(0))
     else:
         return render_template("catalog.html", q=query, murals=searchMurals(query))
+
+@app.route("/page?p=<page>")
+@app.route("/page")
+def paginated():
+    page = int(request.args.get("p"))
+    if page == None:
+        print("No page")
+        return render_template("404.html"), 404
+    else:
+        return render_template("paginated.html", page=(page+1), murals=getMuralsPaginated(page))
 
 @app.route("/murals/<id>")
 def mural(id):

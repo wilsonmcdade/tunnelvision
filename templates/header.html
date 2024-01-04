@@ -1,5 +1,10 @@
-{% macro muralcard(mural) %}
-<div class="card col-lg-2 col-md-6 col-sm-12 col-xs-12">
+{% macro muralcard(mural, paginate, pageNum) %}
+<div class="card col-lg-2 col-md-6 col-sm-12 col-xs-12" 
+{% if paginate %}
+    hx-get="/page?p={{ pageNum }}"
+    hx-trigger="revealed"
+    hx-swap="afterend"
+{% endif %}>
     <div>
         <a style="text-decoration: none;" href="/murals/{{ mural['id'] }}">
         <img class="card-img-top" src="{{ mural['primaryimage'] }}">
@@ -72,6 +77,7 @@
                 border-radius: 5px;
             }
         </style>
+        <script src="{{ url_for('static', filename='js/htmx.min.js') }}"></script>
     </head>
     <body>
         <nav class="navbar navbar-expand-sm navbar-dark fixed-top">

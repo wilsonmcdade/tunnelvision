@@ -1,0 +1,26 @@
+{% macro muralcard(mural, paginate, pageNum) %}
+<div class="card col-lg-2 col-md-6 col-sm-12 col-xs-12" 
+{% if paginate %}
+    hx-get="/page?p={{ pageNum }}"
+    hx-trigger="revealed"
+    hx-swap="afterend"
+{% endif %}>
+    <div>
+        <a style="text-decoration: none;" href="/murals/{{ mural['id'] }}">
+        <img class="card-img-top" src="{{ mural['primaryimage'] }}">
+        <div class="card-body">
+            <p>{{ mural['title'] }}</p>
+            <p>({% if mural["year"] != 0 %}{{ mural["year"] }}{% else %}Unknown{% endif %})</p>
+        </div>
+        </div>
+    </a>
+    </div>
+{% endmacro %}
+
+{% for mural in murals %}
+{% if loop.index is divisibleby 18 %}
+    {{ muralcard(mural, True, page) }}
+{% else %}
+    {{ muralcard(mural) }}
+{% endif %}
+{% endfor %}
