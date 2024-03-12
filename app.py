@@ -58,7 +58,7 @@ def searchMurals(query):
 def getMuralsPaginated(pageNum):
     curs = conn.cursor()
     curs.execute("select id, title, notes, year, location, nextmuralid, artistKnown from murals order by title asc offset %s limit %s", (app.config["ITEMSPERPAGE"] * pageNum, app.config["ITEMSPERPAGE"]))
-    murals = curs.fetchmany(18)
+    murals = curs.fetchmany(app.config['ITEMSPERPAGE'])
     returnable = []
 
     for mural in murals:
@@ -203,6 +203,25 @@ def checkMuralExists(cursor, id):
 
     return True
 
+def getMuralsTagged(cursor, tag):
+    cursor.execute("select murals.id, murals.title, murals.notes, murals.year, murals.location, murals.nextmuralid, murals.artistKnown from mural_tags join tags on mural_tags.tag_id = tags.id join murals on murals.id = mural_tags.mural_id where name = %s", (tag, ))
+    resp = cursor.fetchall()
+
+    returnable = []
+
+    for mural in resp:
+        returnable.append(handleMuralDBResp(cursor, mural))
+
+    return returnable
+
+def getTags(cursor, mural_id=None):
+    if (mural_id==None):
+        cursor.execute("select name from tags")
+    else:
+        cursor.execute("select tags.name from mural_tags join tags on tags.id=mural_tags.tag_id where mural_id = %s", (mural_id, ))
+
+    return [i[0] for i in cursor.fetchall()]
+
 def getAllArtists(cursor):
     cursor.execute("select id from artists")
     resp = cursor.fetchall()
@@ -268,6 +287,15 @@ def catalog():
     else:
         return render_template("catalog.html", q=query, murals=searchMurals(query))
 
+@app.route("/tags?t=<tag>")
+@app.route("/tags")
+def tags():
+    tag = request.args.get("t")
+    if tag == None:
+        return render_template("404.html"), 404
+    else:
+        return render_template("filtered.html", pageTitle="Tag - {0}".format(tag), subHeading="Tagged", murals=getMuralsTagged(conn.cursor(), tag))
+
 @app.route("/page?p=<page>")
 @app.route("/page")
 def paginated():
@@ -281,7 +309,7 @@ def paginated():
 @app.route("/murals/<id>")
 def mural(id):
     if (checkMuralExists(conn.cursor(), id)):
-        return render_template("mural.html", muralDetails=getMural(conn.cursor(), id))
+        return render_template("mural.html", muralDetails=getMural(conn.cursor(), id), tags=getTags(conn.cursor(), id))
     else:
         return render_template("404.html"), 404
     
