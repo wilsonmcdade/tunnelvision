@@ -57,7 +57,7 @@ def searchMurals(query):
 
 def getMuralsPaginated(pageNum):
     curs = conn.cursor()
-    curs.execute("select id, title, notes, year, location, nextmuralid, artistKnown from murals order by title asc offset %s limit %s", (app.config["ITEMSPERPAGE"] * pageNum, app.config["ITEMSPERPAGE"]))
+    curs.execute("select id, title, notes, year, location, nextmuralid, artistKnown from murals where active=true order by title asc offset %s limit %s", (app.config["ITEMSPERPAGE"] * pageNum, app.config["ITEMSPERPAGE"]))
     murals = curs.fetchmany(app.config['ITEMSPERPAGE'])
     returnable = []
 
