@@ -138,6 +138,22 @@
                 {% endif %}
             </div>
         </div>
+        <script>
+            document.addEventListener('keydown', function(event) {
+              switch(event.key) {
+                {% if muralDetails['prevmuralid'] != None: %}
+                case 'ArrowLeft':
+                  window.location.href = '{{ muralDetails['prevmuralid'] }}';
+                  break;
+                {% endif %}
+                {% if muralDetails['nextmuralid'] != None: %}
+                case 'ArrowRight':
+                  window.location.href = '{{ muralDetails['nextmuralid'] }}';
+                  break;
+                {% endif %}
+              }
+            });
+            </script>
     </div>
 </div>
 
