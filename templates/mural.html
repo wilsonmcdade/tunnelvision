@@ -57,7 +57,9 @@
                             {% if muralDetails['images'][loop.index-1]['caption'] != None %}
                             <p class="banner-value no-a-styles">{{ muralDetails['images'][loop.index-1]['caption'] }}</p>
                             {% endif %}
+                            {% if muralDetails['images'][loop.index-1]['fullsizeimage']%}
                             <p class="banner-value"><a class="no-a-styles" href="{{ muralDetails['images'][loop.index-1]['fullsizeimage'] }}">Full Size Image</a></p>
+                            {% endif %}
                         </div>
                     </div>
                     {% endfor %}

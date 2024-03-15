@@ -92,7 +92,24 @@ def handleMuralDBResp(dbResp):
             if image[1] == 0:
                 muralInfo["primaryimage"] = get_file_s3(s3_bucket,image[0])
                 continue
-            muralInfo["images"].append({"imgurl":get_file_s3(s3_bucket,image[0]),"ordering":image[1],"caption":image[2],"alttext":image[3], "id":image[4], "fullsizeimage":get_file_s3(s3_bucket,image[5])})
+
+            if image[5] == None:
+                img = {
+                    "imgurl":get_file_s3(s3_bucket,image[0]),
+                    "ordering":image[1],
+                    "caption":image[2],
+                    "alttext":image[3],
+                    "id":image[4]}
+            else:
+                img = {
+                    "imgurl":get_file_s3(s3_bucket,image[0]),
+                    "ordering":image[1],
+                    "caption":image[2],
+                    "alttext":image[3],
+                    "id":image[4],
+                    "fullsizeimage":get_file_s3(s3_bucket,image[5])}
+                
+            muralInfo["images"].append(img)
 
     for artist in artists:
         muralInfo["artists"].append({"name":artist[1],"id":artist[0]})
