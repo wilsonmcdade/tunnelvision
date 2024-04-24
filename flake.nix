@@ -16,6 +16,8 @@
                     boto
                     flask
                     pillow
+                    flask-migrate
+                    flask-sqlalchemy
                     psycopg2
                     werkzeug
                 ];
