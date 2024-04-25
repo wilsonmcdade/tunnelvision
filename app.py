@@ -248,7 +248,7 @@ def getAllMuralsFromArtist(id):
         db.select(Mural)
             .join(ArtistMuralRelation, Mural.id == ArtistMuralRelation.mural_id)
             .where(ArtistMuralRelation.artist_id == id)
-            .order_by(ArtistMuralRelation.id.asc()),
+            .order_by(Mural.id.asc()),
         per_page=150,
     ).items))
 
@@ -258,7 +258,7 @@ Get artist details
 def getArtistDetails(id):
     return artist_json(db.session.execute(
         db.select(Artist).where(Artist.id == id)
-    ))
+    ).scalar_one())
 
 """
 Get mural details
@@ -321,7 +321,7 @@ def getMuralsTagged(tag):
     return list(map(mural_json, db.session.execute(
         db.select(Mural)
             .select_from(MuralTag)
-            .join(Tag, MuralTag.tag_id == Tag.tag_id)
+            .join(Tag, MuralTag.tag_id == Tag.id)
             .join(Mural, Mural.id == MuralTag.mural_id)
             .where(Tag.name == tag)
     ).scalars()))
@@ -336,11 +336,11 @@ def getTags(mural_id=None):
             db.select(Tag.name)
         ).scalars()
     else:
-        return db.session.execute(
+        return list(db.session.execute(
             db.select(Tag.name)
                 .join(MuralTag, MuralTag.tag_id == Tag.id)
                 .where(MuralTag.mural_id == mural_id)
-        ).scalars()
+        ).scalars())
 
 """
 Get all artist IDs
