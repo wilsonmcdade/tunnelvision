@@ -122,17 +122,17 @@ Create a JSON object for a mural
 def mural_json(mural: Mural):
     artists = []
     if mural.artistknown:
-        artists = db.session.execute(
+        artists = list(map(artist_json, db.session.execute(
             db.select(Artist)
                 .join(ArtistMuralRelation, Artist.id == ArtistMuralRelation.artist_id)
                 .where(ArtistMuralRelation.mural_id == mural.id)
-        ).scalars().map(artist_json);
+        ).scalars()));
 
     prevmuralid = db.session.execute(
         db.select(Mural.id).where(Mural.id == mural.id)
     ).scalar();
 
-    images_data = db.session.execute(
+    image_data = db.session.execute(
         db.select(Image)
             .join(ImageMuralRelation, Image.id == ImageMuralRelation.image_id)
             .where(ImageMuralRelation.mural_id == mural.id)
@@ -141,7 +141,7 @@ def mural_json(mural: Mural):
     primaryimage = None
     for image in image_data:
         if image.ordering == 0:
-            primaryimage = get_file_s3(s3_bucket, image.title)
+            primaryimage = get_file_s3(s3_bucket, image.imghash)
         else:
             images.append(image_json(image))
 
@@ -163,7 +163,10 @@ def mural_json(mural: Mural):
 Create a JSON object for an artist
 """
 def artist_json(artist: Artist):
-    return [{ "id": artist.id, "name": artist.name } for artist in artists]
+    return {
+        "id": artist.id,
+        "name": artist.name
+    }
 
 """
 Create a JSON object for an image
@@ -208,13 +211,13 @@ def searchMurals(query):
 Get murals in list, paginated
 """
 def getMuralsPaginated(page_num):
-    return list(map(mural_json, db.paginate(
+    return list(map(mural_json, db.session.execute(
         db.select(Mural)
             .where(Mural.active == True)
-            .order_by(Mural.title.asc()),
-        per_page=app.config['ITEMSPERPAGE'],
-        page=page_num,
-    ).items))
+            .order_by(Mural.title.asc())
+            .offset(page_num)
+            .limit(app.config['ITEMSPERPAGE'])
+    ).scalars()))
 
 """
 Get all murals
@@ -262,15 +265,15 @@ Get mural details
 """
 def getMural(id):
     mural = db.session.execute(
-        db.select(Mural).where(Mural.id == id).scaler()
-    )
+        db.select(Mural).where(Mural.id == id)
+    ).scalar()
 
     if mural == None:
         logging.warning("DB Response was None")
         logging.warning("ID was '{0}'".format(id))
         return None
 
-    muralInfo = murla_json(mural)
+    muralInfo = mural_json(mural)
     logging.debug(muralInfo)
     return muralInfo
 
@@ -351,6 +354,7 @@ def getAllArtists():
 Get a random assortment of images from DB, excluding thumbnails
 """
 def getRandomImages(count):
+    # TODO: Fix the returned images not being randomized anymore
     return list(map(image_json, db.paginate(
         db.select(Image)
             .where(Image.ordering != 0),
