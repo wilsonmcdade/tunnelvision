@@ -12,9 +12,8 @@ from random import shuffle
 from PIL import Image as PilImage
 from datetime import datetime, timezone
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import func, ForeignKey
+from sqlalchemy import func, ForeignKey, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from sqlalchemy.dialects.postgresql import TSVECTOR
 from s3 import get_bucket, get_file_s3, upload_file, remove_file, get_file_list
 from typing import Optional
 
@@ -198,16 +197,15 @@ def crop_center(pil_img, crop_width, crop_height):
 Search all murals given query
 """
 def searchMurals(query):
-    return list(map(mural_json, db.paginate(
+    return list(map(mural_json, db.session.execute(
         db.select(Mural)
-            .where(
-                Mural.text_search_index.bool_op("@@")(
-                    func.websearch_to_tsquery(query)
-                )
-            )
-            .order_by(Mural.id),
-        per_page=150,
-    ).items))
+            .where(text(
+                "murals.text_search_index @@ websearch_to_tsquery(:query)"
+            ))
+            .order_by(Mural.id)
+            .limit(150),
+        { "query": query }
+    ).scalars()))
 
 """
 Get murals in list, paginated
