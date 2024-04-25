@@ -357,12 +357,13 @@ def getAllArtists():
 Get a random assortment of images from DB, excluding thumbnails
 """
 def getRandomImages(count):
-    # TODO: Fix the returned images not being randomized anymore
-    return list(map(image_json, db.paginate(
+    images = list(map(image_json, db.paginate(
         db.select(Image)
             .where(Image.ordering != 0),
         per_page=8,
     ).items))
+    shuffle(images)
+    return images
 
 ########################
 #
