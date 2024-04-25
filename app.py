@@ -24,63 +24,63 @@ class Mural(Base):
     __tablename__ = "murals"
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str]
+    artistknown: Mapped[bool]
     notes: Mapped[str]
     year: Mapped[int]
     location: Mapped[str]
-    nextmural: Mapped[Optional[int]] = mapped_column(ForeignKey("murals.id"))
-    nextmuralid: Mapped[Optional["Mural"]] = relationship()
-    artistknown: Mapped[bool]
-    primaryimage: Mapped[str]
+    nextmuralid: Mapped[Optional[int]] = mapped_column(ForeignKey("murals.id"))
+    nextmural: Mapped[Optional["Mural"]] = relationship()
+    active: Mapped[bool]
 
 class Artist(Base):
     __tablename__ = "artists"
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str]
+    notes: Mapped[str]
 
 class Image(Base):
     __tablename__ = "images"
     id: Mapped[int] = mapped_column(primary_key=True)
-    imghash: Mapped[str]
-    ordering: Mapped[int]
     caption: Mapped[str]
     alttext: Mapped[str]
-    fullsizehash: Mapped[str]
+    ordering: Mapped[int]
+    imghash: Mapped[str]
+    fullsizehash: Mapped[Optional[str]]
 
 class Tag(Base):
     __tablename__ = "tags"
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str]
+    description: Mapped[str]
 
 class ArtistMuralRelation(Base):
-    __tablename__ = "artistMuralRelation"
-    id: Mapped[int] = mapped_column(primary_key=True)
-    artist: Mapped[int] = mapped_column(ForeignKey("artists.id"))
-    artist_id: Mapped[Artist] = relationship()
-    mural: Mapped[int] = mapped_column(ForeignKey("murals.id"))
-    mural_id: Mapped[Mural] = relationship()
+    __tablename__ = "artistmuralrelation"
+    artist_id: Mapped[int] = mapped_column(ForeignKey("artists.id"), primary_key=True)
+    artist: Mapped[Artist] = relationship()
+    mural_id: Mapped[int] = mapped_column(ForeignKey("murals.id"), primary_key=True)
+    mural: Mapped[Mural] = relationship()
 
 class ImageMuralRelation(Base):
-    __tablename__ = "imageMuralRelation"
-    id: Mapped[int] = mapped_column(primary_key=True)
-    image: Mapped[int] = mapped_column(ForeignKey("images.id"))
-    image_id: Mapped[Image] = relationship()
-    mural: Mapped[int] = mapped_column(ForeignKey("murals.id"))
-    mural_id: Mapped[Mural] = relationship()
+    __tablename__ = "imagemuralrelation"
+    image_id: Mapped[int] = mapped_column(ForeignKey("images.id"), primary_key=True)
+    image: Mapped[Image] = relationship()
+    mural_id: Mapped[int] = mapped_column(ForeignKey("murals.id"), primary_key=True)
+    mural: Mapped[Mural] = relationship()
 
 class MuralTag(Base):
     __tablename__ = "mural_tags"
-    id: Mapped[int] = mapped_column(primary_key=True)
-    mural: Mapped[int] = mapped_column(ForeignKey("murals.id"))
-    mural_id: Mapped[Mural] = relationship()
-    tag: Mapped[int] = mapped_column(ForeignKey("tags.id"))
-    tag_id: Mapped[Tag] = relationship()
+    tag_id: Mapped[int] = mapped_column(ForeignKey("tags.id"), primary_key=True)
+    tag: Mapped[Tag] = relationship()
+    mural_id: Mapped[int] = mapped_column(ForeignKey("murals.id"), primary_key=True)
+    mural: Mapped[Mural] = relationship()
 
 class Feedback(Base):
     __tablename__ = "feedback"
-    time: Mapped[str] = mapped_column(primary_key=True)
+    feedback_id: Mapped[int] = mapped_column(primary_key=True)
     notes: Mapped[str]
-    mural: Mapped[int] = mapped_column(ForeignKey("murals.id"))
-    mural_id: Mapped[Mural] = relationship()
+    time: Mapped[str]
+    mural_id: Mapped[int] = mapped_column(ForeignKey("murals.id"))
+    mural: Mapped[Mural] = relationship()
 
 app = Flask(__name__)
 logging.info("Starting up...")
