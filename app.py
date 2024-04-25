@@ -9,7 +9,7 @@ import hashlib
 import re
 from functools import wraps
 from random import shuffle
-from PIL import Image
+from PIL import Image as PilImage
 from datetime import datetime, timezone
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func, ForeignKey
@@ -527,7 +527,7 @@ def uploadImageResize(file, mural_id, count):
     # Upload full size img to S3
     upload_file(s3_bucket, fullsizehash, file)
 
-    with Image.open(file) as im:
+    with PilImage.open(file) as im:
         width = (im.width * app.config["MAX_IMG_HEIGHT"]) // im.height
 
         (width, height) = (width, app.config["MAX_IMG_HEIGHT"])
@@ -552,6 +552,7 @@ def uploadImageResize(file, mural_id, count):
             imghash=file_hash
         )
         db.session.add(img)
+        db.session.flush()
         img_id = img.id
         db.session.add(ImageMuralRelation(image_id=img_id, mural_id=mural_id))
     db.session.commit()
@@ -646,10 +647,10 @@ Route to delete image
 def deleteImage(id):
     images = db.session.execute(
         db.select(Image).where(Image.id == id)
-    )
+    ).scalars()
 
     for image in images:
-        remove_file(s3_bucket, image.id)
+        remove_file(s3_bucket, image.imghash)
     db.session.execute(
         db.delete(ImageMuralRelation)
             .where(ImageMuralRelation.image_id == id)
@@ -660,7 +661,7 @@ def deleteImage(id):
     )
     db.session.commit()
 
-    return redirect("/edit/")
+    return redirect("/edit/{0}".format(id))
 
 """
 Route to upload new image
@@ -671,7 +672,7 @@ def uploadNewImage(id):
     count = db.session.execute(
         db.select(func.count())
             .where(ImageMuralRelation.mural_id == id)
-    )
+    ).scalar()
 
     for f in request.files.items(multi=True):
         uploadImageResize(f[1], id, count)
@@ -697,6 +698,7 @@ def upload():
         location=request.form["location"]
     )
     db.session.add(mural)
+    db.session.flush()
     mural_id = mural.id
     mural_id = curs.fetchone()[0]
 
@@ -726,7 +728,7 @@ def upload():
                 f[1].seek(0)
                 f[1].save(file)
 
-            with Image.open(fullsizehash) as im:
+            with PilImage.open(fullsizehash) as im:
                 if (im.width == 256 or im.height == 256):
                     # Already a thumbnail
                     print("Already a thumbnail...")
@@ -749,6 +751,7 @@ def upload():
                     ordering=0
                 )
                 db.session.add(img)
+                db.session.flush()
                 img_id = img.id
                 db.session.add(ImageMuralRelation(image_id=img_id, mural_id=mural_id))
 
@@ -778,6 +781,7 @@ def upload():
             else:
                 artist_obj = Artist(name=artist)
                 db.session.add(artist_obj)
+                db.session.flush()
                 artist_id = artist_obj.id
 
             rel = ArtistMuralRelation(artist_id=artist_id, mural_id=mural_id)
