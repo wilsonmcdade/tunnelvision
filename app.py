@@ -14,6 +14,7 @@ from datetime import datetime, timezone
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func, ForeignKey
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy.dialects.postgresql import TSVECTOR
 from s3 import get_bucket, get_file_s3, upload_file, remove_file, get_file_list
 from typing import Optional
 
@@ -30,6 +31,7 @@ class Mural(Base):
     location: Mapped[str]
     nextmuralid: Mapped[Optional[int]] = mapped_column(ForeignKey("murals.id"))
     nextmural: Mapped[Optional["Mural"]] = relationship()
+    text_search_index: Mapped[str]
     active: Mapped[bool]
 
 class Artist(Base):
@@ -129,7 +131,7 @@ def mural_json(mural: Mural):
         ).scalars()));
 
     prevmuralid = db.session.execute(
-        db.select(Mural.id).where(Mural.id == mural.id)
+        db.select(Mural.id).where(Mural.nextmuralid == mural.id)
     ).scalar();
 
     image_data = db.session.execute(
@@ -199,10 +201,11 @@ Search all murals given query
 def searchMurals(query):
     return list(map(mural_json, db.paginate(
         db.select(Mural)
-            .where(text(
-                "text_search_index @@ websearch_to_tsquery(:query)",
-                query
-            ))
+            .where(
+                Mural.text_search_index.bool_op("@@")(
+                    func.websearch_to_tsquery(query)
+                )
+            )
             .order_by(Mural.id),
         per_page=150,
     ).items))
