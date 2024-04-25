@@ -31,7 +31,6 @@ class Mural(Base):
     location: Mapped[str]
     nextmuralid: Mapped[Optional[int]] = mapped_column(ForeignKey("murals.id"))
     nextmural: Mapped[Optional["Mural"]] = relationship()
-    text_search_index: Mapped[str]
     active: Mapped[bool]
 
 class Artist(Base):
@@ -489,19 +488,11 @@ Delete mural entry, all relations, and all images from DB and S3
 def deleteMuralEntry(id):
     # Get all images relating to this mural from the DB
     images = db.paginate(
-        db.select(Images)
+        db.select(Image)
             .join(ImageMuralRelation, Image.id == ImageMuralRelation.image_id)
             .where(ImageMuralRelation.mural_id == id),
         per_page=150,
     ).items
-    # images = [(imghash, id), ...]
-    for image in images:
-        remove_file(s3_bucket, image.imghash)
-        db.session.execute(
-            db.delete(Image)
-                .where(Image.id == image.id)
-        )
-
     db.session.execute(
         db.delete(ImageMuralRelation)
             .where(ImageMuralRelation.mural_id == id)
@@ -514,6 +505,12 @@ def deleteMuralEntry(id):
         db.delete(Mural)
             .where(Mural.id == id)
     )
+    for image in images:
+        remove_file(s3_bucket, image.imghash)
+        db.session.execute(
+            db.delete(Image)
+                .where(Image.id == image.id)
+        )
 
     db.session.commit()
 
@@ -692,7 +689,7 @@ def upload():
 
     mural = Mural(
         title=request.form["title"],
-        artistKnown=artistKnown,
+        artistknown=artistKnown,
         notes=request.form["notes"],
         year=request.form["year"],
         location=request.form["location"]
@@ -700,7 +697,6 @@ def upload():
     db.session.add(mural)
     db.session.flush()
     mural_id = mural.id
-    mural_id = curs.fetchone()[0]
 
     # Count is the order in which the images are shown
     #   0 is the thumbnail (only shown on mural card)
@@ -717,7 +713,7 @@ def upload():
         count = db.session.execute(
             db.select(func.count())
                 .where(Image.imghash == fullsizehash)
-        )
+        ).scalar()
         if (count > 0):
             print(fullsizehash)
             return render_template("404.html"), 404
@@ -771,13 +767,13 @@ def upload():
             count = db.session.execute(
                 db.select(func.count())
                     .where(Artist.name == artist)
-            )
+            ).scalar()
             artist_id = None
             if(count > 0):
                 artist_id = db.session.execute(
-                    db.select(Artist)
+                    db.select(Artist.id)
                         .where(Artist.name == artist)
-                ).id
+                ).scalar()
             else:
                 artist_obj = Artist(name=artist)
                 db.session.add(artist_obj)
