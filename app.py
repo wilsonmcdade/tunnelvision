@@ -385,7 +385,7 @@ def catalog():
     if query == None:
         return render_template("catalog.html", q=query, murals=getMuralsPaginated(0))
     else:
-        return render_template("catalog.html", q=query, murals=searchMurals(query))
+        return render_template("filtered.html", pageTitle="Query - {0}".format(query), subHeading="Search Query", q=query, murals=searchMurals(query))
 
 @app.route("/tags?t=<tag>")
 @app.route("/tags")
