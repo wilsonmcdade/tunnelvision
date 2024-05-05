@@ -138,10 +138,10 @@ def mural_json(mural: Mural):
             .where(ImageMuralRelation.mural_id == mural.id)
     ).scalars()
     images = []
-    primaryimage = None
+    thumbnail = None
     for image in image_data:
         if image.ordering == 0:
-            primaryimage = get_file_s3(s3_bucket, image.imghash)
+            thumbnail = get_file_s3(s3_bucket, image.imghash)
         else:
             images.append(image_json(image))
 
@@ -154,7 +154,7 @@ def mural_json(mural: Mural):
         "prevmuralid": prevmuralid,
         "nextmuralid": mural.nextmuralid,
         "active": mural.active,
-        "primaryimage": primaryimage,
+        "thumbnail": thumbnail,
         "artists": artists,
         "images": images
     }
