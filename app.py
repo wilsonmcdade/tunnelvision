@@ -354,11 +354,13 @@ def getAllArtists():
 Get a random assortment of images from DB, excluding thumbnails
 """
 def getRandomImages(count):
-    images = list(map(image_json, db.paginate(
+    images = list(map(image_json, 
+        db.session.execute(
         db.select(Image)
-            .where(Image.ordering != 0),
-        per_page=8,
-    ).items))
+            .where(Image.ordering != 0)
+            .order_by(func.random())
+            .limit(count))
+            .scalars()))
     shuffle(images)
     return images
 
@@ -370,7 +372,7 @@ def getRandomImages(count):
 
 @app.route("/")
 def home():
-    return render_template("home.html", pageTitle="RIT's Overlooked Art Museum", muralHighlights=getRandomImages(0))
+    return render_template("home.html", pageTitle="RIT's Overlooked Art Museum", muralHighlights=getRandomImages(8))
 
 @app.route('/about')
 def about():
