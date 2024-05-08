@@ -9,9 +9,78 @@ import hashlib
 import re
 from functools import wraps
 from random import shuffle
-from PIL import Image
+from PIL import Image as PilImage
 from datetime import datetime, timezone
-from s3 import get_file, get_bucket, get_file_s3, upload_file, remove_file, get_file_list
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import func, ForeignKey, text
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from s3 import get_bucket, get_file_s3, upload_file, remove_file, get_file_list
+from typing import Optional
+
+class Base(DeclarativeBase):
+    pass
+
+class Mural(Base):
+    __tablename__ = "murals"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    title: Mapped[str]
+    artistknown: Mapped[bool]
+    notes: Mapped[str]
+    year: Mapped[int]
+    location: Mapped[str]
+    nextmuralid: Mapped[Optional[int]] = mapped_column(ForeignKey("murals.id"))
+    nextmural: Mapped[Optional["Mural"]] = relationship()
+    active: Mapped[bool]
+
+class Artist(Base):
+    __tablename__ = "artists"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str]
+    notes: Mapped[str]
+
+class Image(Base):
+    __tablename__ = "images"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    caption: Mapped[str]
+    alttext: Mapped[str]
+    ordering: Mapped[int]
+    imghash: Mapped[str]
+    fullsizehash: Mapped[Optional[str]]
+
+class Tag(Base):
+    __tablename__ = "tags"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str]
+    description: Mapped[str]
+
+class ArtistMuralRelation(Base):
+    __tablename__ = "artistmuralrelation"
+    artist_id: Mapped[int] = mapped_column(ForeignKey("artists.id"), primary_key=True)
+    artist: Mapped[Artist] = relationship()
+    mural_id: Mapped[int] = mapped_column(ForeignKey("murals.id"), primary_key=True)
+    mural: Mapped[Mural] = relationship()
+
+class ImageMuralRelation(Base):
+    __tablename__ = "imagemuralrelation"
+    image_id: Mapped[int] = mapped_column(ForeignKey("images.id"), primary_key=True)
+    image: Mapped[Image] = relationship()
+    mural_id: Mapped[int] = mapped_column(ForeignKey("murals.id"), primary_key=True)
+    mural: Mapped[Mural] = relationship()
+
+class MuralTag(Base):
+    __tablename__ = "mural_tags"
+    tag_id: Mapped[int] = mapped_column(ForeignKey("tags.id"), primary_key=True)
+    tag: Mapped[Tag] = relationship()
+    mural_id: Mapped[int] = mapped_column(ForeignKey("murals.id"), primary_key=True)
+    mural: Mapped[Mural] = relationship()
+
+class Feedback(Base):
+    __tablename__ = "feedback"
+    feedback_id: Mapped[int] = mapped_column(primary_key=True)
+    notes: Mapped[str]
+    time: Mapped[str]
+    mural_id: Mapped[int] = mapped_column(ForeignKey("murals.id"))
+    mural: Mapped[Mural] = relationship()
 
 app = Flask(__name__)
 logging.info("Starting up...")
@@ -27,15 +96,96 @@ app.config["GIT_REVISION"] = subprocess.check_output(git_cmd).decode('utf-8').rs
 print("Connecting to S3 Bucket {0}".format(app.config["BUCKET_NAME"]))
 s3_bucket = get_bucket(app.config["S3_URL"], app.config["S3_KEY"], app.config["S3_SECRET"], app.config["BUCKET_NAME"])
 
-print("Connecting to DB {0}".format(app.config["DBNAME"]))
-conn = psycopg2.connect(**{
-        "database": app.config["DBNAME"],
-        "user": app.config["DBUSER"],
-        "password": app.config["DBPWD"],
-        "host": app.config["DBHOST"],
-        "port": app.config["DBPORT"]
-    })
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://{0}:{1}@{2}:{3}/{4}'.format(
+    app.config["DBUSER"],
+    app.config["DBPWD"],
+    app.config["DBHOST"],
+    app.config["DBPORT"],
+    app.config["DBNAME"],
+)
 
+print("Connecting to DB {0}".format(app.config["DBNAME"]))
+db = SQLAlchemy(app)
+
+with app.app_context():
+    db.create_all()
+
+########################
+#
+#   Helpers
+#
+########################
+
+"""
+Create a JSON object for a mural
+"""
+def mural_json(mural: Mural):
+    artists = []
+    if mural.artistknown:
+        artists = list(map(artist_json, db.session.execute(
+            db.select(Artist)
+                .join(ArtistMuralRelation, Artist.id == ArtistMuralRelation.artist_id)
+                .where(ArtistMuralRelation.mural_id == mural.id)
+        ).scalars()));
+
+    prevmuralid = db.session.execute(
+        db.select(Mural.id).where(Mural.nextmuralid == mural.id)
+    ).scalar();
+
+    image_data = db.session.execute(
+        db.select(Image)
+            .join(ImageMuralRelation, Image.id == ImageMuralRelation.image_id)
+            .where(ImageMuralRelation.mural_id == mural.id)
+    ).scalars()
+    images = []
+    thumbnail = None
+    for image in image_data:
+        if image.ordering == 0:
+            thumbnail = get_file_s3(s3_bucket, image.imghash)
+        else:
+            images.append(image_json(image))
+
+    return {
+        "id": mural.id,
+        "title": mural.title,
+        "year": mural.year,
+        "location": mural.location,
+        "notes": mural.notes,
+        "prevmuralid": prevmuralid,
+        "nextmuralid": mural.nextmuralid,
+        "active": mural.active,
+        "thumbnail": thumbnail,
+        "artists": artists,
+        "images": images
+    }
+
+"""
+Create a JSON object for an artist
+"""
+def artist_json(artist: Artist):
+    return {
+        "id": artist.id,
+        "name": artist.name
+    }
+
+"""
+Create a JSON object for an image
+"""
+def image_json(image: Image):
+    out = {
+        "imgurl": get_file_s3(s3_bucket, image.imghash),
+        "ordering": image.ordering,
+        "caption": image.caption,
+        "alttext": image.alttext,
+        "id": image.id
+    }
+    if image.fullsizehash != None:
+        out["fullsizeimage"] = get_file_s3(s3_bucket, image.fullsizehash)
+    return out
+
+"""
+Crop a given image to a centered square
+"""
 def crop_center(pil_img, crop_width, crop_height):
     img_width, img_height = pil_img.size
     return pil_img.crop(((img_width - crop_width) // 2,
@@ -43,159 +193,119 @@ def crop_center(pil_img, crop_width, crop_height):
                          (img_width + crop_width) // 2,
                          (img_height + crop_height) // 2))
 
+"""
+Search all murals given query
+"""
 def searchMurals(query):
-    curs = conn.cursor()
-    curs.execute("select id, title, notes, year, location, nextmuralid, artistKnown from murals where text_search_index @@ websearch_to_tsquery(%s) order by id;", (query, ))
+    return list(map(mural_json, db.session.execute(
+        db.select(Mural)
+            .where(text(
+                "murals.text_search_index @@ websearch_to_tsquery(:query)"
+            ))
+            .order_by(Mural.id)
+            .limit(150),
+        { "query": query }
+    ).scalars()))
 
-    murals = curs.fetchmany(150)
-    returnable = []
+"""
+Get murals in list, paginated
+"""
+def getMuralsPaginated(page_num):
+    return list(map(mural_json, db.session.execute(
+        db.select(Mural)
+            .where(Mural.active == True)
+            .order_by(Mural.title.asc())
+            .offset(page_num)
+            .limit(app.config['ITEMSPERPAGE'])
+    ).scalars()))
 
-    for mural in murals:
-        returnable.append(handleMuralDBResp(curs, mural))
+"""
+Get all murals
+"""
+def getAllMurals():
+    return list(map(mural_json, db.paginate(
+        db.select(Mural)
+            .order_by(Mural.title.asc()),
+        per_page=200,
+    ).items))
 
-    return returnable
+"""
+Get all murals from year
+"""
+def getAllMuralsFromYear(year):
+    return list(map(mural_json, db.paginate(
+        db.select(Mural)
+            .where(Mural.year == year)
+            .order_by(Mural.title.asc()),
+        per_page=150,
+    ).items))
 
-def getMuralsPaginated(pageNum):
-    curs = conn.cursor()
+"""
+Get all murals from artist given artist ID
+"""
+def getAllMuralsFromArtist(id):
+    return list(map(mural_json, db.paginate(
+        db.select(Mural)
+            .join(ArtistMuralRelation, Mural.id == ArtistMuralRelation.mural_id)
+            .where(ArtistMuralRelation.artist_id == id)
+            .order_by(Mural.id.asc()),
+        per_page=150,
+    ).items))
 
-    curs.execute("select id, title, notes, year, location, nextmuralid, artistKnown from murals where active=true order by title asc offset %s limit %s", (app.config["ITEMSPERPAGE"] * pageNum, app.config["ITEMSPERPAGE"]))
-    murals = curs.fetchmany(app.config['ITEMSPERPAGE'])
-    returnable = []
+"""
+Get artist details
+"""
+def getArtistDetails(id):
+    return artist_json(db.session.execute(
+        db.select(Artist).where(Artist.id == id)
+    ).scalar_one())
 
-    for mural in murals:
-        returnable.append(handleMuralDBResp(curs, mural))
+"""
+Get mural details
+"""
+def getMural(id):
+    mural = db.session.execute(
+        db.select(Mural).where(Mural.id == id)
+    ).scalar()
 
-    return returnable
-
-def getAllMurals(cursor):
-    cursor.execute("select id, title, notes, year, location, nextmuralid, artistKnown from murals order by title asc")
-    murals = cursor.fetchmany(200)
-    returnable = []
-
-    for mural in murals:
-        returnable.append(handleMuralDBResp(cursor, mural))
-
-    return returnable
-
-def getAllMuralsFromYear(cursor, year):
-    cursor.execute("select id, title, notes, year, location, nextmuralid, artistKnown from murals where year = %s order by id asc", (year,))
-    murals = cursor.fetchmany(150)
-    returnable = []
-
-    for mural in murals:
-        returnable.append(handleMuralDBResp(cursor, mural))
-
-    return returnable
-
-def getAllMuralsFromArtist(cursor, id):
-    cursor.execute("select id, title, notes, year, location, nextmuralid, artistKnown from murals inner join artistMuralRelation on murals.id = artistMuralRelation.mural_id where artistMuralRelation.artist_id = %s order by id asc", (id, ))
-    murals = cursor.fetchmany(150)
-    returnable = []
-
-    for mural in murals:
-        returnable.append(handleMuralDBResp(cursor, mural))
-
-    return returnable
-
-def getArtistDetails(cursor, id):
-    cursor.execute("select id, name, notes from artists where id=%s", (id, ))
-    resp = cursor.fetchone()
-    return {
-            "id":      resp[0],
-            "name":    resp[1],
-            "notes":   resp[2]
-            }
-
-def getMural(cursor, id):
-    cursor.execute("select id, title, notes, year, location, nextmuralid, artistKnown from murals where id = %s", (id, ))
-    dbResp = cursor.fetchone()
-
-    if dbResp == None:
+    if mural == None:
         logging.warning("DB Response was None")
         logging.warning("ID was '{0}'".format(id))
         return None
 
-    muralInfo = handleMuralDBResp(cursor, dbResp)
-
-    logging.debug(muralInfo)        
+    muralInfo = mural_json(mural)
+    logging.debug(muralInfo)
     return muralInfo
 
-def handleMuralDBResp(cursor, dbResp):
-    muralInfo = {
-        "id":  0,
-        "title": "",
-        "year": 0,
-        "location": "",
-        "notes": "",
-        "prevmuralid": None,
-        "nextmuralid": None,
-        "primaryimage": "",
-        "artists": [],
-        "images": []
-    }
-
-    artists = []
-
-    if dbResp[6] == True:
-        cursor.execute("select artists.id AS id, artists.name AS name from artists left join artistMuralRelation on artists.id = artistMuralRelation.artist_id where mural_id = %s", (dbResp[0], ))
-        artists = cursor.fetchall()
-
-    cursor.execute("select id from murals where nextmuralid = %s", (dbResp[0], ))
-    prevmuralid = cursor.fetchone()
-
-    muralInfo["id"] = dbResp[0]
-    muralInfo["title"] = dbResp[1]
-    muralInfo["notes"] = dbResp[2]
-    muralInfo["year"] = dbResp[3]
-    muralInfo["location"] = dbResp[4]
-    if ((prevmuralid != None) and (len(prevmuralid) > 0)):
-        muralInfo["prevmuralid"] = prevmuralid[0]
-    muralInfo["nextmuralid"] = dbResp[5]
-
-    cursor.execute("select images.imghash as imghash, images.ordering as ordering, images.caption AS caption, images.alttext AS alttext, images.id as id, images.fullsizehash from images left join imageMuralRelation on images.id = imageMuralRelation.image_id where imageMuralRelation.mural_id = %s;", (dbResp[0], ))
-    images = cursor.fetchall()
-
-    if (images != None):
-        for image in images:
-            if image[1] == 0:
-                muralInfo["primaryimage"] = get_file_s3(s3_bucket,image[0])
-                continue
-            muralInfo["images"].append({"imgurl":get_file_s3(s3_bucket,image[0]),"ordering":image[1],"caption":image[2],"alttext":image[3], "id":image[4], "fullsizeimage":get_file_s3(s3_bucket,image[5])})
-
-    for artist in artists:
-        muralInfo["artists"].append({"name":artist[1],"id":artist[0]})
-
-    return muralInfo
-
-def checkYearExists(cursor, year):
+def checkYearExists(year):
     if not year.isdigit():
         return False
-    
+
     integer_pattern = r'^[+-]?\d+$'
 
     # Use re.match to check if the variable matches the integer pattern
     if not re.match(integer_pattern, year):
         return False
-    
+
     return True
 
-def checkArtistExists(cursor, id):
+def checkArtistExists(id):
     if not id.isdigit():
         return False
-    
+
     integer_pattern = r'^[+-]?\d+$'
 
     # Use re.match to check if the variable matches the integer pattern
     if not re.match(integer_pattern, str(id)):
         return False
-    
+
     return True
 
-def checkMuralExists(cursor, id):
+def checkMuralExists(id):
     # Check id is not bad
     if not id.isdigit():
         return False
-    
+
     integer_pattern = r'^[+-]?\d+$'
 
     # Use re.match to check if the variable matches the integer pattern
@@ -204,76 +314,65 @@ def checkMuralExists(cursor, id):
 
     return True
 
-def getMuralsTagged(cursor, tag):
-    cursor.execute("select murals.id, murals.title, murals.notes, murals.year, murals.location, murals.nextmuralid, murals.artistKnown from mural_tags join tags on mural_tags.tag_id = tags.id join murals on murals.id = mural_tags.mural_id where name = %s", (tag, ))
-    resp = cursor.fetchall()
+"""
+Get all murals with given tag
+"""
+def getMuralsTagged(tag):
+    return list(map(mural_json, db.session.execute(
+        db.select(Mural)
+            .select_from(MuralTag)
+            .join(Tag, MuralTag.tag_id == Tag.id)
+            .join(Mural, Mural.id == MuralTag.mural_id)
+            .where(Tag.name == tag)
+    ).scalars()))
 
-    returnable = []
-
-    for mural in resp:
-        returnable.append(handleMuralDBResp(cursor, mural))
-
-    return returnable
-
-def getTags(cursor, mural_id=None):
-    if (mural_id==None):
-        cursor.execute("select name from tags")
+"""
+Get all tags / Get all tags on certain mural
+(logic based on whether mural_id is passed in)
+"""
+def getTags(mural_id=None):
+    if (mural_id == None):
+        return db.session.execute(
+            db.select(Tag.name)
+        ).scalars()
     else:
-        cursor.execute("select tags.name from mural_tags join tags on tags.id=mural_tags.tag_id where mural_id = %s", (mural_id, ))
+        return list(db.session.execute(
+            db.select(Tag.name)
+                .join(MuralTag, MuralTag.tag_id == Tag.id)
+                .where(MuralTag.mural_id == mural_id)
+        ).scalars())
 
-    return [i[0] for i in cursor.fetchall()]
+"""
+Get all artist IDs
+"""
+def getAllArtists():
+    return list(map(artist_json, db.session.execute(
+        db.select(Artist)
+    ).scalars()))
 
-def getAllArtists(cursor):
-    cursor.execute("select id from artists")
-    resp = cursor.fetchall()
-
-    returnable = []
-
-    for id in resp:
-        returnable.append(getArtistDetails(cursor,id[0]))
-
-    return returnable
-
+"""
+Get a random assortment of images from DB, excluding thumbnails
+"""
 def getRandomImages(count):
-    returnable = []
-    cursor = conn.cursor()
+    images = list(map(image_json, 
+        db.session.execute(
+        db.select(Image)
+            .where(Image.ordering != 0)
+            .order_by(func.random())
+            .limit(count))
+            .scalars()))
+    shuffle(images)
+    return images
 
-    cursor.execute("select images.imghash as imghash, images.ordering as ordering, images.caption AS caption, images.alttext AS alttext, images.id as id from images left join imageMuralRelation on images.id = imageMuralRelation.image_id where images.ordering != 0")
-    images = cursor.fetchall()
-
-    if (images != None):
-        for image in images:
-            returnable.append({"imgurl":get_file_s3(s3_bucket,image[0]),"ordering":image[1],"caption":image[2],"alttext":image[3], "id":image[4]})
-
-    shuffle(returnable)
-
-    return returnable[:8]
-
-def debug_only(f):
-    @wraps(f)
-    def wrapped(**kwargs):
-        if app.config["DEBUG"]:
-            return f(**kwargs)
-        return abort(404)
-    return wrapped
-
-@app.route("/suggestion", methods=["POST"])
-def submit_suggestion():
-    print(request.form)
-
-    curs = conn.cursor()
-
-    dt = datetime.now(timezone.utc)
-    print(dt)
-
-    curs.execute("insert into feedback (notes, time, mural_id) values (%s, %s, %s);", (request.form["notes"], str(dt) ,request.form["muralid"]))
-
-    conn.commit()
-    return redirect("/catalog")
+########################
+#
+#   Pages
+#
+########################
 
 @app.route("/")
 def home():
-    return render_template("home.html", pageTitle="RIT's Overlooked Art Museum", muralHighlights=getRandomImages(0))
+    return render_template("home.html", pageTitle="RIT's Overlooked Art Museum", muralHighlights=getRandomImages(8))
 
 @app.route('/about')
 def about():
@@ -286,7 +385,7 @@ def catalog():
     if query == None:
         return render_template("catalog.html", q=query, murals=getMuralsPaginated(0))
     else:
-        return render_template("catalog.html", q=query, murals=searchMurals(query))
+        return render_template("filtered.html", pageTitle="Query - {0}".format(query), subHeading="Search Query", q=query, murals=searchMurals(query))
 
 @app.route("/tags?t=<tag>")
 @app.route("/tags")
@@ -295,8 +394,11 @@ def tags():
     if tag == None:
         return render_template("404.html"), 404
     else:
-        return render_template("filtered.html", pageTitle="Tag - {0}".format(tag), subHeading="Tagged", murals=getMuralsTagged(conn.cursor(), tag))
+        return render_template("filtered.html", pageTitle="Tag - {0}".format(tag), subHeading="Tagged", murals=getMuralsTagged(tag))
 
+"""
+Get next page of murals
+"""
 @app.route("/page?p=<page>")
 @app.route("/page")
 def paginated():
@@ -307,146 +409,298 @@ def paginated():
     else:
         return render_template("paginated.html", page=(page+1), murals=getMuralsPaginated(page))
 
+"""
+Page for specific mural details
+"""
 @app.route("/murals/<id>")
 def mural(id):
-    if (checkMuralExists(conn.cursor(), id)):
-        return render_template("mural.html", muralDetails=getMural(conn.cursor(), id), tags=getTags(conn.cursor(), id))
-    else:
-        return render_template("404.html"), 404
-    
-@app.route("/artist/<id>")
-def artist(id):
-    if (checkArtistExists(conn.cursor(), id)):
-        return render_template("filtered.html", pageTitle="Artist Search", subHeading=getArtistDetails(conn.cursor(), id), murals=getAllMuralsFromArtist(conn.cursor(), id))
+    if (checkMuralExists(id)):
+        return render_template("mural.html", muralDetails=getMural(id), tags=getTags(id))
     else:
         return render_template("404.html"), 404
 
+"""
+Page for specific artist
+"""
+@app.route("/artist/<id>")
+def artist(id):
+    if (checkArtistExists(id)):
+        return render_template("filtered.html", pageTitle="Artist Search", subHeading=getArtistDetails(id), murals=getAllMuralsFromArtist(id))
+    else:
+        return render_template("404.html"), 404
+
+"""
+Page for specific year
+"""
 @app.route("/year/<year>")
 def year(year):
-    if (checkYearExists(conn.cursor(), year)):
+    if (checkYearExists(year)):
         if (year == "0"):
             readableYear = "Unknown Date"
         else:
             readableYear = year
-        return render_template("filtered.html", pageTitle="Murals from {0}".format(readableYear), subHeading=None, murals=getAllMuralsFromYear(conn.cursor(), year))
-    else:
-        return render_template("404.html"), 404
-    
-@app.route('/edit/<id>')
-@debug_only
-def edit(id):
-    return render_template("edit.html", muralDetails=getMural(conn.cursor(), id))
-
-@app.route('/deleteArtist/<id>', methods=["POST"])
-@debug_only
-def deleteArtist(id):
-    if checkArtistExists(conn.cursor(), id):
-        curs = conn.cursor()
-
-        curs.execute("delete from artistmuralrelation where artist_id = %s", (id, ))
-        curs.execute("delete from artists where id = %s", (id, ))
-
-        conn.commit()
-        return redirect("/admin")
+        return render_template("filtered.html", pageTitle="Murals from {0}".format(readableYear), subHeading=None, murals=getAllMuralsFromYear(year))
     else:
         return render_template("404.html"), 404
 
-@app.route('/delete/<id>', methods=["POST"])
-@debug_only
-def delete(id):
-    if checkMuralExists(conn.cursor(), id):
-        curs = conn.cursor()
-        curs.execute("select images.imghash as imghash, images.id as id from images left join imageMuralRelation on images.id = imageMuralRelation.image_id where imageMuralRelation.mural_id = %s;", (id, ))
-        images = curs.fetchmany(150)
-
-        for image in images:
-            remove_file(s3_bucket, image[0])
-            curs.execute("delete from images where id=%s", (image[1], ))
-        
-        curs.execute("delete from imagemuralrelation where mural_id = %s", (id, ))
-
-        curs.execute("delete from artistmuralrelation where mural_id = %s", (id, ))
-
-        curs.execute("delete from murals where id = %s", (id, ))
-        conn.commit()
-        return redirect("/admin")
-    else:
-        return render_template("404.html"), 404
-    
-@app.route('/editimage/<id>', methods=["POST"])
-@debug_only
-def editImage(id):
-    curs = conn.cursor()
-
-    curs.execute("update images set caption = %s, alttext = %s where id = %s", (request.form["caption"],request.form["alttext"],id))
-
-    conn.commit()
-    return ('', 204)
-
-@app.route('/deleteimage/<id>', methods=["POST"])
-@debug_only
-def deleteImage(id):
-    curs = conn.cursor()
-    curs.execute("select images.imghash as imghash from images left join imageMuralRelation on images.id = imageMuralRelation.image_id where imageMuralRelation.image_id = %s;", (id, ))
-    images = curs.fetchmany(150)
-
-    for image in images:
-        remove_file(s3_bucket, image[0])
-    curs.execute("delete from imagemuralrelation where image_id = %s", (id, ))
-    conn.commit()
-
-    return redirect("/edit/")
-
+"""
+Generic error handler
+"""
 @app.errorhandler(HTTPException)
 def not_found(e):
     return render_template("404.html"), 404
 
+########################
+#
+#   Management
+#
+########################
+
+########################
+# Helpers
+########################
+
+def debug_only(f):
+    @wraps(f)
+    def wrapped(**kwargs):
+        if app.config["DEBUG"]:
+            return f(**kwargs)
+        return abort(404)
+    return wrapped
+
+"""
+Delete artist and all relations from DB
+"""
+def deleteArtistGivenID(id):
+    db.session.execute(
+        db.delete(ArtistMuralRelation)
+            .where(ArtistMuralRelation.artist_id == id)
+    )
+    db.session.execute(
+        db.delete(Artist)
+            .where(Artist.id == id)
+    )
+    db.session.commit()
+
+"""
+Delete mural entry, all relations, and all images from DB and S3
+"""
+def deleteMuralEntry(id):
+    # Get all images relating to this mural from the DB
+    images = db.paginate(
+        db.select(Image)
+            .join(ImageMuralRelation, Image.id == ImageMuralRelation.image_id)
+            .where(ImageMuralRelation.mural_id == id),
+        per_page=150,
+    ).items
+    db.session.execute(
+        db.delete(ImageMuralRelation)
+            .where(ImageMuralRelation.mural_id == id)
+    )
+    db.session.execute(
+        db.delete(ArtistMuralRelation)
+            .where(ArtistMuralRelation.mural_id == id)
+    )
+    db.session.execute(
+        db.delete(Mural)
+            .where(Mural.id == id)
+    )
+    for image in images:
+        remove_file(s3_bucket, image.imghash)
+        db.session.execute(
+            db.delete(Image)
+                .where(Image.id == image.id)
+        )
+
+    db.session.commit()
+
+"""
+Upload fullsize and resized image, add relation to mural given ID
+"""
+def uploadImageResize(file, mural_id, count):
+    fullsizehash = hashlib.md5(file.read()).hexdigest()
+    file.seek(0)
+
+    # Upload full size img to S3
+    upload_file(s3_bucket, fullsizehash, file)
+
+    with PilImage.open(file) as im:
+        width = (im.width * app.config["MAX_IMG_HEIGHT"]) // im.height
+
+        (width, height) = (width, app.config["MAX_IMG_HEIGHT"])
+        print(width, height)
+        im = im.resize((width,height))
+
+        im = im.convert("RGB")
+        im.save(fullsizehash + ".resized", "JPEG")
+
+    with open((fullsizehash + ".resized"), "rb") as rs:
+
+        file_hash = hashlib.md5(rs.read()).hexdigest()
+        rs.seek(0)
+
+        upload_file(s3_bucket, file_hash, rs, filename=fullsizehash+".resized")
+
+        print(get_file_s3(s3_bucket, file_hash))
+
+        img = Image(
+            fullsizehash=fullsizehash,
+            ordering=count,
+            imghash=file_hash
+        )
+        db.session.add(img)
+        db.session.flush()
+        img_id = img.id
+        db.session.add(ImageMuralRelation(image_id=img_id, mural_id=mural_id))
+    db.session.commit()
+
+########################
+#   Pages
+########################
+
+"""
+Route to edit mural page
+"""
+@app.route('/edit/<id>')
+@debug_only
+def edit(id):
+    return render_template("edit.html", muralDetails=getMural(id))
+
+"""
+Route to the admin panel
+"""
+@app.route("/admin")
+@debug_only
+def admin():
+    return render_template("admin.html", murals=getAllMurals(), artists=getAllArtists())
+
+
+########################
+#   Form submissions
+########################
+
+"""
+Suggestion/feedback form
+"""
+@app.route("/suggestion", methods=["POST"])
+def submit_suggestion():
+    print(request.form)
+
+    dt = datetime.now(timezone.utc)
+
+    db.session.add(Feedback(
+        notes=request.form["notes"],
+        time=str(dt),
+        mural_id=request.form["muralid"]
+    ))
+    db.session.commit()
+
+    return redirect("/catalog")
+
+"""
+Route to delete artist
+"""
+@app.route('/deleteArtist/<id>', methods=["POST"])
+@debug_only
+def deleteArtist(id):
+    if checkArtistExists(id):
+        deleteArtistGivenID(id)
+        return redirect("/admin")
+    else:
+        return render_template("404.html"), 404
+
+"""
+Route to delete mural entry
+"""
+@app.route('/delete/<id>', methods=["POST"])
+@debug_only
+def delete(id):
+    if checkMuralExists(id):
+        deleteMuralEntry(id)
+        return redirect("/admin")
+    else:
+        return render_template("404.html"), 404
+
+"""
+Route to edit image details
+Set caption and alttext based on http form
+"""
+@app.route('/editimage/<id>', methods=["POST"])
+@debug_only
+def editImage(id):
+    image = db.session.execute(
+        db.select(Image).where(Image.id == id)
+    ).scalar_one()
+    image.caption = request.form["caption"]
+    image.alttext = request.form["alttext"]
+    db.session.commit()
+    return ('', 204)
+
+"""
+Route to delete image
+"""
+@app.route('/deleteimage/<id>', methods=["POST"])
+@debug_only
+def deleteImage(id):
+    images = db.session.execute(
+        db.select(Image).where(Image.id == id)
+    ).scalars()
+
+    for image in images:
+        remove_file(s3_bucket, image.imghash)
+    db.session.execute(
+        db.delete(ImageMuralRelation)
+            .where(ImageMuralRelation.image_id == id)
+    )
+    db.session.execute(
+        db.delete(Image)
+            .where(Image.id == id)
+    )
+    db.session.commit()
+
+    return redirect("/edit/{0}".format(id))
+
+"""
+Route to upload new image
+"""
 @app.route("/uploadimage/<id>", methods=["POST"])
 @debug_only
 def uploadNewImage(id):
-    curs = conn.cursor()
-    curs.execute("select count(*) from imageMuralRelation where mural_id = %s", (id, ))
-    count = int(curs.fetchone()[0])
+    count = db.session.execute(
+        db.select(func.count())
+            .where(ImageMuralRelation.mural_id == id)
+    ).scalar()
+
     for f in request.files.items(multi=True):
-        filename = secure_filename(f[1].filename)
-        print(f[1].filename)
-
-        file_hash = hashlib.md5(f[1].read()).hexdigest()
-        f[1].seek(0)
-
-        curs.execute("select count(*) from images where imghash = %s", (file_hash, ))
-        if (int(curs.fetchone()[0]) > 0):
-            print(file_hash)
-            return render_template("404.html"), 404
-        
-        upload_file(s3_bucket, file_hash, f[1])
-
-        curs.execute("insert into images (imghash, ordering) values (%s, %s) returning id", (file_hash, count))
-        img_id = curs.fetchone()[0]
-
-        curs.execute("insert into imageMuralRelation (image_id, mural_id) values (%s, %s)", (img_id,id))
-
+        uploadImageResize(f[1], id, count)
         count += 1
 
-    conn.commit()
-    
     return redirect("/edit/{0}".format(id))
 
+"""
+Route to add new mural entry
+"""
 @app.route("/upload", methods=["POST"])
 @debug_only
 def upload():
-    print(request.form)
-    print(request.files)
-
-    curs = conn.cursor()
-
     artistKnown = True if request.form.get('artistknown','on') else False
     if not (request.form["year"].isdigit()):
         return render_template("404.html"), 404
 
-    curs.execute("insert into murals (title, artistKnown, notes, year, location) values (%s, %s, %s, %s, %s) returning id;",(request.form["title"],artistKnown,request.form["notes"], request.form["year"], request.form["location"]))
-    mural_id = curs.fetchone()[0]
+    mural = Mural(
+        title=request.form["title"],
+        artistknown=artistKnown,
+        notes=request.form["notes"],
+        year=request.form["year"],
+        location=request.form["location"]
+    )
+    db.session.add(mural)
+    db.session.flush()
+    mural_id = mural.id
 
+    # Count is the order in which the images are shown
+    #   0 is the thumbnail (only shown on mural card)
+    #   All other values denote the order shown in the image carousel
     count = 0
     for f in request.files.items(multi=True):
         filename = secure_filename(f[1].filename)
@@ -455,17 +709,22 @@ def upload():
         fullsizehash = hashlib.md5(f[1].read()).hexdigest()
         f[1].seek(0)
 
-        curs.execute("select count(*) from images where imghash = %s",(fullsizehash, ))
-        if (int(curs.fetchone()[0]) > 0):
+        # Check if image is already used in DB
+        count = db.session.execute(
+            db.select(func.count())
+                .where(Image.imghash == fullsizehash)
+        ).scalar()
+        if (count > 0):
             print(fullsizehash)
             return render_template("404.html"), 404
-        
-        if (count == 0): # Take first image and make thumbnail
 
-            upload_file(s3_bucket, fullsizehash, f[1])
-            get_file(app.config["BUCKET_NAME"], fullsizehash, fullsizehash, app.config["S3_KEY"], app.config["S3_SECRET"])
+        # Begin creating thumbnail version
+        if count == 0:
+            with open(fullsizehash, 'wb') as file:
+                f[1].seek(0)
+                f[1].save(file)
 
-            with Image.open(fullsizehash) as im:
+            with PilImage.open(fullsizehash) as im:
                 if (im.width == 256 or im.height == 256):
                     # Already a thumbnail
                     print("Already a thumbnail...")
@@ -481,91 +740,55 @@ def upload():
                 file_hash = hashlib.md5(tb.read()).hexdigest()
                 tb.seek(0)
 
+                # Upload thumnail version
                 upload_file(s3_bucket, file_hash, tb, (fullsizehash + ".thumbnail"))
-                curs.execute("insert into images (imghash, ordering) values (%s, %s) returning id", (file_hash, 0))
-                image_id = curs.fetchone()[0]
-                curs.execute("insert into imageMuralRelation (image_id, mural_id) values (%s, %s)", (image_id,mural_id))
+                img = Image(
+                    imghash=file_hash,
+                    ordering=0
+                )
+                db.session.add(img)
+                db.session.flush()
+                img_id = img.id
+                db.session.add(ImageMuralRelation(image_id=img_id, mural_id=mural_id))
 
-
-                print(get_file_s3(s3_bucket, file_hash))
-
-            conn.commit()
-
+            db.session.commit()
             count += 1
-        
+
+        # Begin adding full size to database
         f[1].seek(0)
-        upload_file(s3_bucket, fullsizehash, f[1])
 
-        print("Fetching file {0}".format(fullsizehash))
-        get_file(app.config["BUCKET_NAME"], fullsizehash, fullsizehash, app.config["S3_KEY"], app.config["S3_SECRET"])
-
-        curs.execute("insert into images (imghash, ordering) values (%s, %s) returning id", (fullsizehash, count))
-        img_id = curs.fetchone()[0]
-
-        with Image.open(fullsizehash) as im:
-            if (im.width == 1200 or im.height == 1200):
-                # image has already been resized
-                print("Already resized...")
-                continue
-
-            width = (im.width * app.config["MAX_IMG_HEIGHT"]) // im.height
-
-            (width, height) = (width, app.config["MAX_IMG_HEIGHT"])
-            print(width, height)
-            im = im.resize((width,height))
-
-            im = im.convert("RGB")
-            im.save(fullsizehash + ".resized", "JPEG")
-
-
-        with open(fullsizehash, "rb") as image:
-
-            fullsizehash = hashlib.md5(image.read()).hexdigest()
-
-            curs.execute("update images set fullsizehash = %s where id = %s", (fullsizehash, img_id))
-
-        with open((fullsizehash + ".resized"), "rb") as rs:
-
-            file_hash = hashlib.md5(rs.read()).hexdigest()
-            rs.seek(0)
-            
-            upload_file(s3_bucket, file_hash, rs, (fullsizehash + ".resized"))
-
-            print(get_file_s3(s3_bucket, file_hash))
-
-            curs.execute("update images set imghash = %s, ordering = %s where id = %s", (file_hash, count, img_id))
-
-        curs.execute("insert into imageMuralRelation (image_id, mural_id) values (%s, %s)", (img_id,mural_id))
+        uploadImageResize(f[1], mural_id, count)
 
         count += 1
 
     if (artistKnown):
         artists = request.form["artists"].split(',')
         for artist in artists:
-            curs.execute("select count(*) from artists where name = %s", (artist, ))
-            if(int(curs.fetchone()[0]) > 0):
-                curs.execute("select id from artists where name = %s", (artist,))
+            count = db.session.execute(
+                db.select(func.count())
+                    .where(Artist.name == artist)
+            ).scalar()
+            artist_id = None
+            if(count > 0):
+                artist_id = db.session.execute(
+                    db.select(Artist.id)
+                        .where(Artist.name == artist)
+                ).scalar()
             else:
-                curs.execute("insert into artists (name) values (%s) returning id", (artist, ))
+                artist_obj = Artist(name=artist)
+                db.session.add(artist_obj)
+                db.session.flush()
+                artist_id = artist_obj.id
 
-            artist_id = curs.fetchone()[0]
+            rel = ArtistMuralRelation(artist_id=artist_id, mural_id=mural_id)
+            db.session.add(rel)
 
-            curs.execute("insert into artistMuralRelation (artist_id, mural_id) values (%s ,%s)", (artist_id,mural_id))
-
-    conn.commit()
+    db.session.commit()
 
     return redirect("/edit/{0}".format(mural_id))
 
-@app.route("/admin")
-@debug_only
-def admin():
-    return render_template("admin.html", murals=getAllMurals(conn.cursor()), artists=getAllArtists(conn.cursor()))
-
 if __name__ == "__main__":
-    try:
-        if not app.config["DEBUG"]:
-            app.run(host="0.0.0.0", port=8080)
-        else:
-            app.run()
-    finally:
-        conn.close()
+    if not app.config["DEBUG"]:
+        app.run(host="0.0.0.0", port=8080)
+    else:
+        app.run()

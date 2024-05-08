@@ -31,6 +31,21 @@
             </form>
         </div>
         <div class="col-4">
+            <div class="row">
+                <div class="col-7">
+                    {% if muralDetails['prevmuralid'] != None: %}
+                    <a class="btn btn-primary" role="button" href="{{ muralDetails['prevmuralid'] }}">Prev</a>
+                    {% endif %}
+                </div>
+                <div class="col-5">
+    
+                    {% if muralDetails['nextmuralid'] != None: %}
+                    <a class="btn btn-primary" role="button" href="{{ muralDetails['nextmuralid'] }}">Next</a>
+                    {% endif %}
+                </div>
+            </div>
+            <input type="checkbox" {% if muralDetails['active'] %} checked {% endif %} name="active">
+            <label for="active">Active</label>
             <h3>Notes:</h3>
             <p>{{ muralDetails["notes"] }}</p>
             <h3>Year:</h3>
@@ -50,14 +65,23 @@
             <button type="submit" class="btn btn-danger">Delete Mural</button>
             </form>
         </div>
-        {% if muralDetails['prevmuralid'] != None: %}
-        <p><a href="{{ muralDetails['prevmuralid'] }}">Prev</a></p>
-        {% endif %}
-
-        {% if muralDetails['nextmuralid'] != None: %}
-        <a href="{{ muralDetails['nextmuralid'] }}">Next</a>
-        {% endif %}
     </div>
+    <script>
+        document.addEventListener('keydown', function(event) {
+          switch(event.key) {
+            {% if muralDetails['prevmuralid'] != None: %}
+            case 'ArrowLeft':
+              window.location.href = '{{ muralDetails['prevmuralid'] }}';
+              break;
+            {% endif %}
+            {% if muralDetails['nextmuralid'] != None: %}
+            case 'ArrowRight':
+              window.location.href = '{{ muralDetails['nextmuralid'] }}';
+              break;
+            {% endif %}
+          }
+        });
+        </script>
 </div>
 
 {% endblock %}

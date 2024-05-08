@@ -7,7 +7,7 @@
 {% endif %}>
     <div>
         <a style="text-decoration: none;" href="/murals/{{ mural['id'] }}">
-        <img class="card-img-top" src="{{ mural['primaryimage'] }}">
+        <img class="card-img-top" src="{{ mural['thumbnail'] }}">
         <div class="card-body">
             <p>{{ mural['title'] }}</p>
             <p>({% if mural["year"] != 0 %}{{ mural["year"] }}{% else %}Unknown{% endif %})</p>
@@ -117,7 +117,7 @@
                         <img src="https://assets.csh.rit.edu/pubsite/csh_logo_square.svg"  style="width: 30px;">
                     </a>
                     <a class="nav-link" href="https://github.com/wilsonmcdade/tunnelvision" target="_blank">
-                        <img src="/static/images/github.svg" style="width: 30px; filter: invert(1);">
+                        <img alt="Git: {{ config['GIT_REVISION'] }}" src="/static/images/github.svg" style="width: 30px; filter: invert(1);">
                     </a>
                 </div>
             </div>
