@@ -215,7 +215,7 @@ def getMuralsPaginated(page_num):
         db.select(Mural)
             .where(Mural.active == True)
             .order_by(Mural.title.asc())
-            .offset(page_num)
+            .offset(page_num*app.config['ITEMSPERPAGE'])
             .limit(app.config['ITEMSPERPAGE'])
     ).scalars()))
 
