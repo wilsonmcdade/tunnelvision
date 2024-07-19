@@ -16,6 +16,7 @@ from sqlalchemy import func, ForeignKey, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from s3 import get_bucket, get_file_s3, upload_file, remove_file, get_file_list
 from typing import Optional
+import json_log_formatter
 
 class Base(DeclarativeBase):
     pass
@@ -84,6 +85,15 @@ class Feedback(Base):
     mural: Mapped[Mural] = relationship()
 
 app = Flask(__name__)
+
+formatter = json_log_formatter.JSONFormatter()
+json_handler = logging.StreamHandler()
+json_handler.setFormatter(formatter)
+logger = logging.getLogger()
+logger.addHandler(json_handler)
+logger.setLevel(logging.INFO)
+
+
 logging.info("Starting up...")
 
 if os.path.exists(os.path.join(os.getcwd(), "config.py")):
@@ -94,7 +104,7 @@ else:
 git_cmd = ['git', 'rev-parse', '--short', 'HEAD']
 app.config["GIT_REVISION"] = subprocess.check_output(git_cmd).decode('utf-8').rstrip()
 
-print("Connecting to S3 Bucket {0}".format(app.config["BUCKET_NAME"]))
+logging.info("Connecting to S3 Bucket {0}".format(app.config["BUCKET_NAME"]))
 s3_bucket = get_bucket(app.config["S3_URL"], app.config["S3_KEY"], app.config["S3_SECRET"], app.config["BUCKET_NAME"])
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://{0}:{1}@{2}:{3}/{4}'.format(
@@ -105,8 +115,12 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://{0}:{1}@{2}:{3}/{4}'.forma
     app.config["DBNAME"],
 )
 
-print("Connecting to DB {0}".format(app.config["DBNAME"]))
-db = SQLAlchemy(app)
+logging.info("Connecting to DB {0}".format(app.config["DBNAME"]))
+
+try:
+    db = SQLAlchemy(app)
+except KeyboardInterrupt:
+    logging.error("Keyboard Interrupt during DB acquisition")
 
 with app.app_context():
     db.create_all()
@@ -406,7 +420,7 @@ Get next page of murals
 def paginated():
     page = int(request.args.get("p"))
     if page == None:
-        print("No page")
+        #print("No page")
         return render_template("404.html"), 404
     else:
         return render_template("paginated.html", page=(page+1), murals=getMuralsPaginated(page))
@@ -530,7 +544,7 @@ def uploadImageResize(file, mural_id, count):
         width = (im.width * app.config["MAX_IMG_HEIGHT"]) // im.height
 
         (width, height) = (width, app.config["MAX_IMG_HEIGHT"])
-        print(width, height)
+        #print(width, height)
         im = im.resize((width,height))
 
         im = im.convert("RGB")
@@ -543,7 +557,7 @@ def uploadImageResize(file, mural_id, count):
 
         upload_file(s3_bucket, file_hash, rs, filename=fullsizehash+".resized")
 
-        print(get_file_s3(s3_bucket, file_hash))
+        #print(get_file_s3(s3_bucket, file_hash))
 
         img = Image(
             fullsizehash=fullsizehash,
@@ -706,7 +720,7 @@ def upload():
     count = 0
     for f in request.files.items(multi=True):
         filename = secure_filename(f[1].filename)
-        print(f[1].filename)
+        #print(f[1].filename)
 
         fullsizehash = hashlib.md5(f[1].read()).hexdigest()
         f[1].seek(0)
@@ -717,7 +731,7 @@ def upload():
                 .where(Image.imghash == fullsizehash)
         ).scalar()
         if (count > 0):
-            print(fullsizehash)
+            #print(fullsizehash)
             return render_template("404.html"), 404
 
         # Begin creating thumbnail version
@@ -729,7 +743,7 @@ def upload():
             with PilImage.open(fullsizehash) as im:
                 if (im.width == 256 or im.height == 256):
                     # Already a thumbnail
-                    print("Already a thumbnail...")
+                    #print("Already a thumbnail...")
                     continue
                 im = crop_center(im, min(im.size), min(im.size))
                 im.thumbnail((256,256))
