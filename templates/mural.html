@@ -1,4 +1,7 @@
 {% extends "header.html" %}
+{% block title %}
+{{ muralDetails["title"] }} - Tunnel Vision
+{% endblock %}
 {% block dynamic_content %}
 
 <style>
@@ -84,6 +87,10 @@
             {% endif %}
             <h3>Year:</h3>
             <p><a href="/year/{{ muralDetails['year'] }}">{% if muralDetails["year"] != 0 %}{{ muralDetails["year"] }}{% else %}Unknown{% endif %}</a></p>
+            {%if spotify %}
+            <h3>Related Music:</h3>
+            <iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/{{ spotify }}" width="100%" height="160" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+            {% endif %}
             <h3>Location:</h3>
             <p>{{ muralDetails["location"] }} </p>
 

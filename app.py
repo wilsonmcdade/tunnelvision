@@ -31,6 +31,7 @@ class Mural(Base):
     nextmuralid: Mapped[Optional[int]] = mapped_column(ForeignKey("murals.id"))
     nextmural: Mapped[Optional["Mural"]] = relationship()
     active: Mapped[bool]
+    spotify: Mapped[str]
 
 class Artist(Base):
     __tablename__ = "artists"
@@ -156,7 +157,8 @@ def mural_json(mural: Mural):
         "active": mural.active,
         "thumbnail": thumbnail,
         "artists": artists,
-        "images": images
+        "images": images,
+        "spotify": mural.spotify
     }
 
 """
@@ -213,7 +215,7 @@ Get murals in list, paginated
 def getMuralsPaginated(page_num):
     return list(map(mural_json, db.session.execute(
         db.select(Mural)
-            .where(Mural.active == True)
+            .where(Mural.active == True)    
             .order_by(Mural.title.asc())
             .offset(page_num*app.config['ITEMSPERPAGE'])
             .limit(app.config['ITEMSPERPAGE'])
@@ -415,7 +417,7 @@ Page for specific mural details
 @app.route("/murals/<id>")
 def mural(id):
     if (checkMuralExists(id)):
-        return render_template("mural.html", muralDetails=getMural(id), tags=getTags(id))
+        return render_template("mural.html", muralDetails=getMural(id), tags=getTags(id), spotify=getMural(id)['spotify'])
     else:
         return render_template("404.html"), 404
 
