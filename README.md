@@ -85,7 +85,9 @@ create table tags (
   description text not null
 );
 ```
-<<<<<<< HEAD
-=======
->>>>>>> 5387c04 (Added Schema to readme)
->>>>>>> b6ae14a (Added Schema to readme)
+
+## Docker:
+
+- `podman compose up`
+- go to http://localhost:9001 and add a bucket for TV
+-
