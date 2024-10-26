@@ -7,3 +7,11 @@
 * `source venv/bin/activate`
 * `pip3 install -r requirements.txt`
 * `python3 app.py`
+
+
+
+## Docker:
+
+- `podman compose up`
+- go to http://localhost:9001 and add a bucket for TV
+- 
