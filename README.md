@@ -85,3 +85,9 @@ create table tags (
   description text not null
 );
 ```
+
+## Docker:
+
+- `podman compose up`
+- go to http://localhost:9001 and add a bucket for TV
+-
