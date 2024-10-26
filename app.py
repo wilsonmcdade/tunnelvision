@@ -19,6 +19,7 @@ from typing import Optional
 import shutil
 import pandas as pd
 import json_log_formatter
+from pathlib import Path
 
 class Base(DeclarativeBase):
     pass
@@ -99,10 +100,11 @@ logger.setLevel(logging.INFO)
 
 logging.info("Starting up...")
 
-if os.path.exists(os.path.join(os.getcwd(), "config.py")):
-    app.config.from_pyfile(os.path.join(os.getcwd(), "config.py"))
+configpath = Path("config.py")
+if configpath.exists():
+    app.config.from_pyfile(configpath)
 else:
-    app.config.from_pyfile(os.path.join(os.getcwd(), "config.env.py"))
+    app.config.from_pyfile(Path("config.env.py"))
 
 
 if app.config["JSON_LOGS"] is True:
