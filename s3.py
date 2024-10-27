@@ -22,7 +22,7 @@ class S3Bucket:
         )
 
     def get_file_s3(self, file_hash):
-        key = self._client.get_objects_v2(self.name, file_hash)
+        """ Get the path to the file specified by file_hash"""
         # Generates presigned URL that lasts for 60 seconds (1 minute)
         # If streaming begins prior to the time cutoff, s3 will allow
         # for the streaming to continue, uninterrupted.
@@ -30,7 +30,8 @@ class S3Bucket:
             print("Failed to fetch {0}".format(file_hash))
             url = "../static/images/csh_tilted.png"
         else:
-            url = key.generate_url(90, query_auth=True)
+            url = self._client.generate_presigned_url('get_object', Params={'Bucket': self.name, 'Key': file_hash}, ExpiresIn=90)
+
         return url
 
     # def get_date_modified(self, file_hash):
