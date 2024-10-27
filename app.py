@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func, ForeignKey, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from s3 import get_bucket, get_file_s3, upload_file, remove_file, get_file_list, get_file
+from s3 import S3Bucket
 from typing import Optional
 import shutil
 import pandas as pd
@@ -118,9 +118,7 @@ app.config["GIT_REVISION"] = subprocess.check_output(git_cmd).decode('utf-8').rs
 
 logging.info("Connecting to S3 Bucket {0}".format(app.config["BUCKET_NAME"]))
 
-# TODO: replace with instantiation of S3Bucket
-
-s3_bucket = get_bucket(app.config["S3_URL"], app.config["S3_KEY"], app.config["S3_SECRET"], app.config["BUCKET_NAME"])
+s3_bucket = S3Bucket(app.config["BUCKET_NAME"], app.config["S3_KEY"], app.config["S3_SECRET"], app.config["S3_URL"])
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://{0}:{1}@{2}:{3}/{4}'.format(
     app.config["DBUSER"],
