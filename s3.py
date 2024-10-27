@@ -60,16 +60,3 @@ class S3Bucket:
         # Does anybody read these comments
         # yes
         self._client.delete_object(self.name, file_hash)
-
-    def get_bucket(self):
-        # Establish s3 connection through boto
-        # Formatting long paramter strings is never fun
-        return self._client.get_bucket(self.name)
-        # s3 = client.resource('s3')
-        # conn = boto.connect_s3(
-        #             aws_access_key_id = s3_key,
-        #             aws_secret_access_key = s3_secret,
-        #             host = s3_url,
-        #             calling_format = boto.s3.connection.OrdinaryCallingFormat())
-        # Return the bucket rather than the entire resource
-        # return s3.Bucket(bucket_name)
