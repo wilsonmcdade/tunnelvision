@@ -38,10 +38,6 @@ class S3Bucket:
             url = key.generate_url(90, query_auth=True)
         return url
 
-    def get_file_list(self):
-        # List all files in the bucket
-        return self._client.list_objects_v2(self.name)
-
     def get_date_modified(self, file_hash):
         # Get date modified for a specific file in the bucket
         date =  self._client.get_object(self.name, file_hash).get("LastModified")
