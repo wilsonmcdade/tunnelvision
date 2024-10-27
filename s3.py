@@ -33,11 +33,11 @@ class S3Bucket:
             url = key.generate_url(90, query_auth=True)
         return url
 
-    def get_date_modified(self, file_hash):
-        # Get date modified for a specific file in the bucket
-        date =  self._client.get_object(self.name, file_hash).get("LastModified")
-        # TODO: this may not work with datetime objects
-        return date[:(date.index(":") - 2)]
+    # def get_date_modified(self, file_hash):
+    #     # Get date modified for a specific file in the bucket
+    #     date =  self._client.get_object(self.name, file_hash).get("LastModified")
+    #     # TODO: this may not work with datetime objects
+    #     return date[:(date.index(":") - 2)]
 
     def upload_file(self, file_hash, f, filename=""):
 
