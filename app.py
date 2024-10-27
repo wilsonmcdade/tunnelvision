@@ -120,15 +120,9 @@ logging.info(f"Connecting to S3 Bucket {app.config['BUCKET_NAME']}")
 
 s3_bucket = get_bucket(app.config["S3_URL"], app.config["S3_KEY"], app.config["S3_SECRET"], app.config["BUCKET_NAME"])
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://{0}:{1}@{2}:{3}/{4}'.format(
-    app.config["DBUSER"],
-    app.config["DBPWD"],
-    app.config["DBHOST"],
-    app.config["DBPORT"],
-    app.config["DBNAME"],
-)
+app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql://{app.config["DBUSER"]}:{app.config["DBPWD"]}@{app.config["DBHOST"]}:{app.config["DBPORT"]}/{app.config["DBNAME"]}'
 
-logging.info("Connecting to DB {0}".format(app.config["DBNAME"]))
+logging.info(f"Connecting to DB {app.config['DBNAME']}")
 
 try:
     db = SQLAlchemy(app)
@@ -430,7 +424,7 @@ def getMural(id):
 
     if mural == None:
         logging.warning("DB Response was None")
-        logging.warning("ID was '{0}'".format(id))
+        logging.warning(f"ID was '{id}'")
         return None
 
     muralInfo = mural_json(mural)
@@ -548,7 +542,7 @@ def catalog():
     if query == None:
         return render_template("catalog.html", q=query, murals=getMuralsPaginated(0), tags=getAllTags())
     else:
-        return render_template("filtered.html", pageTitle="Query - {0}".format(query), subHeading="Search Query", q=query, murals=searchMurals(query))
+        return render_template("filtered.html", pageTitle=f"Query - {query}", subHeading="Search Query", q=query, murals=searchMurals(query))
 
 @app.route("/tags?t=<tag>")
 @app.route("/tags")
@@ -557,7 +551,7 @@ def tags():
     if tag == None:
         return render_template("404.html"), 404
     else:
-        return render_template("filtered.html", pageTitle="Tag - {0}".format(tag), subHeading=getTagDetails(tag)['description'], murals=getMuralsTagged(tag))
+        return render_template("filtered.html", pageTitle=f"Tag - {tag}", subHeading=getTagDetails(tag)['description'], murals=getMuralsTagged(tag))
 
 """
 Get next page of murals
@@ -602,7 +596,7 @@ def year(year):
             readableYear = "Unknown Date"
         else:
             readableYear = year
-        return render_template("filtered.html", pageTitle="Murals from {0}".format(readableYear), subHeading=None, murals=getAllMuralsFromYear(year))
+        return render_template("filtered.html", pageTitle=f"Murals from {readableYear}", subHeading=None, murals=getAllMuralsFromYear(year))
     else:
         return render_template("404.html"), 404
 
@@ -1017,7 +1011,7 @@ def makeThumbnail():
     get_file(app.config['BUCKET_NAME'], image.imghash, newfilename, app.config['S3_KEY'], app.config['S3_SECRET'])
     make_thumbnail(mural_id, newfilename)
     
-    return redirect("/edit/{0}".format(mural_id))
+    return redirect(f"/edit/{mural_id}")
 
 """
 Route to delete image
@@ -1116,7 +1110,7 @@ def uploadNewImage(id):
         uploadImageResize(f[1], id, count)
         count += 1
 
-    return redirect("/edit/{0}".format(id))
+    return redirect(f"/edit/{id}")
 
 """
 Route to add new mural entry
@@ -1227,7 +1221,7 @@ def upload():
 
     db.session.commit()
 
-    return redirect("/edit/{0}".format(mural_id))
+    return redirect(f"/edit/{mural_id}")
 
 if __name__ == "__main__":
     if not app.config["DEBUG"]:
