@@ -86,11 +86,7 @@ class Feedback(Base):
 
 app = Flask(__name__)
 
-formatter = json_log_formatter.JSONFormatter()
-json_handler = logging.StreamHandler()
-json_handler.setFormatter(formatter)
 logger = logging.getLogger()
-logger.addHandler(json_handler)
 logger.setLevel(logging.INFO)
 
 
@@ -100,6 +96,15 @@ if os.path.exists(os.path.join(os.getcwd(), "config.py")):
     app.config.from_pyfile(os.path.join(os.getcwd(), "config.py"))
 else:
     app.config.from_pyfile(os.path.join(os.getcwd(), "config.env.py"))
+
+
+if app.config["JSON_LOGS"] is True:
+    formatter = json_log_formatter.JSONFormatter()
+    json_handler = logging.StreamHandler()
+    json_handler.setFormatter(formatter)
+    logger.addHandler(json_handler)
+
+logging.info("Starting up...")
 
 git_cmd = ['git', 'rev-parse', '--short', 'HEAD']
 app.config["GIT_REVISION"] = subprocess.check_output(git_cmd).decode('utf-8').rstrip()
