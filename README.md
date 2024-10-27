@@ -2,11 +2,12 @@
 
 ## Running Locally
 (Reach out to a maintainer of this repo for credentials for the dev database)
+
+
 * Fork the repo and run the following commands in that directory:
-* `python3 -m venv venv`
-* `source venv/bin/activate`
-* `pip3 install -r requirements.txt`
-* `python3 app.py`
+* `pip install pipenv --user` (if you dont already have it installed)
+* `pipenv install`
+* `pipenv run python3 app.py`
 
 ## Database Schema
 This project uses SQLAlchemy to access a PostgresQL database. The following is the (generated afterwards) DB schema:
