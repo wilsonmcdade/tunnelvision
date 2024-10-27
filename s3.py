@@ -3,8 +3,6 @@
 # Written by Steven Greene for CSH audiophiler
 
 import mimetypes
-import boto
-import boto.s3.connection
 import boto3
 
 class S3Bucket:
