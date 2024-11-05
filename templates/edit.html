@@ -81,28 +81,33 @@
             <form action="/editmural/{{ muralDetails['id'] }}" method="post">
                 <div class="mb-3">
                     <label for="active" class="form-label">Active</label>
+                    <p style="font-weight: 300">Should this mural be on the catalog? Inactive murals can still be searched.</p>
                     <input {{ muralDetails['active'] }} type="checkbox" id="active" name="active">
                 </div>
                 <div class="mb-3">
-                    <label for="notes" class="form-label">Notes</label>
-                    <input value="{{ muralDetails['notes'] }}" type="text" class="form-control" id="notes" name="notes" required>
+                    <label for="notes" class="form-label">Description</label>
+                    <p style="font-weight: 300">Visually describe this piece. Please be as descriptive as possible and use terms that could be aid in the discoverability of the piece in search engines.</p>
+                    <textarea value="{{ muralDetails['notes'] }}" type="text" class="form-control" id="notes" name="notes" required></textarea>
                 </div>
                 <div class="mb-3">
                     <label for="remarks" class="form-label">Remarks</label>
-                    <input value="{{ muralDetails['remarks'] }}" type="text" class="form-control" id="remarks" name="remarks" required>
+                    <p style="font-weight: 300">Use the remarks field to add any additional details that could be useful about a piece. These details could be sourced from suggestions, common knowledge, or other casual sources. Please end your remarks entry with your name and the date when you wrote it.</p>
+                    <textarea value="{{ muralDetails['remarks'] }}" type="text" class="form-control" id="remarks" name="remarks"></textarea>
                 </div>
                 <div class="mb-3">
                     <label for="year" class="form-label">Year</label>
+                    <p style="font-weight: 300">The approximate year this piece was painted. If painted over two years, use the lowest year. If the year is unknown, enter 0.</p>
                     <input value="{{ muralDetails['year'] }}" type="text" class="form-control" id="year" name="year" required>
                 </div>
                 <div class="mb-3">
                     <label for="location" class="form-label">Location</label>
+                    <p style="font-weight: 300">Describe the location of the mural. You don't have to have GPS coordinates, just say what building it's under, or if it's near a landmark like Corner Store.</p>
                     <input value="{{ muralDetails['location'] }}" type="text" class="form-control" id="location" name="location" required>
                 </div>
                 <h1>Private Information</h1>
                 <div class="mb-3">
                     <label for="location" class="form-label">Private Notes</label>
-                    <input value="{{ muralDetails['private_notes'] }}" type="text" class="form-control" id="private_notes" name="private_notes" required>
+                    <textarea value="{{ muralDetails['private_notes'] }}" type="text" class="form-control" id="private_notes" name="private_notes"></textarea>
                 </div>
                 <button type="submit" class="btn btn-primary">Edit Details</button>
             </form>

@@ -82,8 +82,8 @@
         </div>
         <div class="col-lg-4 col-md-12">
             {% if muralDetails["notes"] != '' %}
-            <h3>Notes:</h3>
-            <p>{{ muralDetails["notes"] }} </p>
+            <h3>Description:</h3>
+            <pre style="font-family:inherit;font-size:inherit">{{ muralDetails["notes"] }} </pre>
             {% endif %}
             <h3>Year:</h3>
             <p><a href="/year/{{ muralDetails['year'] }}">{% if muralDetails["year"] != 0 %}{{ muralDetails["year"] }}{% else %}Unknown{% endif %}</a></p>
@@ -96,7 +96,7 @@
             {% if muralDetails["remarks"] != None %}
             <div class="accordion" id="remarkdropdown">
                 <div class="accordion-item">
-                    <h2 class="accordion-header" id="remarkheading">
+                    <h2 class="accordion-header" id="remarkheading" title="Remarks can provide additional information about a piece, including details sourced from suggestions, conversations, and other casual sources.">
                         <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#remarkcollapse" aria-controls="remarkcollapse">
                         Remarks
                         </button>
@@ -104,7 +104,7 @@
                     <div id="remarkcollapse" class="accordion-collapse collapse" aria-labelledby="remarkheading" data-bs-parent="#remarkdropdown">
                         <div class="accordion-body">
                             <div class="container">
-                                <p>{{ muralDetails['remarks'] }}</p>
+                                <pre style="font-family:inherit;font-size:inherit">{{ muralDetails['remarks'] }}</pre>
                             </div>
                         </div>
                     </div>
