@@ -15,7 +15,12 @@ def get_file_s3(bucket, file_hash):
     # Generates presigned URL that lasts for 60 seconds (1 minute)
     # If streaming begins prior to the time cutoff, s3 will allow
     # for the streaming to continue, uninterrupted.
-    return key.generate_url(90, query_auth=True)
+    if (key == None):
+        print("Failed to fetch {0}".format(file_hash))
+        url = "../static/images/csh_tilted.png"
+    else:
+        url = key.generate_url(90, query_auth=True)
+    return url
 
 def get_file_list(bucket):
     # List all files in the bucket
