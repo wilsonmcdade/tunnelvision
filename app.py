@@ -848,7 +848,7 @@ Route to add new mural entry
 @app.route("/upload", methods=["POST"])
 @debug_only
 def upload():
-    artistKnown = True if request.form.get('artistknown','on') else False
+    artistKnown = True if request.form['artistknown'] else False
     if not (request.form["year"].isdigit()):
         return render_template("404.html"), 404
 
