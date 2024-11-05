@@ -132,7 +132,7 @@
                 <div class="accordion-item">
                 <h2 class="accordion-header" id="headingOne">
                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-controls="collapseOne">
-                    Suggestion?
+                    Suggestion? Feedback?
                     </button>
                 </h2>
                     <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
@@ -140,8 +140,12 @@
                             <div class="container">
                                 <form action="/suggestion" method="post" enctype="multipart/form-data">
                                     <div class="mb-3">
-                                        <label for="notes" class="form-label">Notes</label>
-                                        <input type="text" class="form-control" id="notes" name="notes" required>
+                                        <label for="notes" class="form-label"><b>Notes</b></label>
+                                        <p style="font-weight: 300">What could be improved with this mural listing?</p>
+                                        <input type="text" class="form-control" style="margin-bottom: 10px; margin-top: -10px;" id="notes" name="notes" required>
+                                        <label for="notes" class="form-label"><b>Your Contact</b></label>
+                                        <p style="font-weight: 300">How can we reach you to follow up?</p>
+                                        <input type="text" class="form-control" id="contact" name="contact">
                                         <input type="text" class="visually-hidden" id="muralid" name="muralid" value="{{ muralDetails['id'] }}">
                                     </div>
                                 </div>

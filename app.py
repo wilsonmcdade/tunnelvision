@@ -81,6 +81,7 @@ class Feedback(Base):
     __tablename__ = "feedback"
     feedback_id: Mapped[int] = mapped_column(primary_key=True)
     notes: Mapped[str]
+    contact: Mapped[str]
     time: Mapped[str]
     mural_id: Mapped[int] = mapped_column(ForeignKey("murals.id"))
     mural: Mapped[Mural] = relationship()
@@ -602,12 +603,12 @@ Suggestion/feedback form
 """
 @app.route("/suggestion", methods=["POST"])
 def submit_suggestion():
-    print(request.form)
 
     dt = datetime.now(timezone.utc)
 
     db.session.add(Feedback(
         notes=request.form["notes"],
+        contact=request.form["contact"],
         time=str(dt),
         mural_id=request.form["muralid"]
     ))
