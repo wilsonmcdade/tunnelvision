@@ -26,6 +26,7 @@ class Mural(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str]
     artistknown: Mapped[bool]
+    remarks: Mapped[str]
     notes: Mapped[str]
     year: Mapped[int]
     location: Mapped[str]
@@ -165,6 +166,7 @@ def mural_json(mural: Mural):
         "title": mural.title,
         "year": mural.year,
         "location": mural.location,
+        "remarks": mural.remarks,
         "notes": mural.notes,
         "prevmuralid": prevmuralid,
         "nextmuralid": mural.nextmuralid,
