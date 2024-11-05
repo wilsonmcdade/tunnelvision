@@ -110,7 +110,26 @@
             <li><a href="/artist/{{ artist['id'] }}">{{artist["name"]}}</a></li>
             {% endfor %}
             </ul>
-            {% endif %}<!-- Button trigger modal -->
+            {% endif %}
+
+            {% if muralFeedback|length > 0 %}
+
+            <h1>Feedback:</h1>
+
+            {% for feedback in muralFeedback: %}
+            <div class="list-group">
+                <a class="list-group-item">
+                  <div class="d-flex w-100 justify-content-between">
+                    <p class="mb-1"><b>Notes:</b> {{ muralFeedback[loop.index-1]['notes'] }}</p>
+                    <p class="text-muted" title="{{ muralFeedback[loop.index-1]['exacttime'] }}">{{ muralFeedback[loop.index-1]['approxtime'] }}</p>
+                  </div>
+                  <small><b>Contact:</b> {{ muralFeedback[loop.index-1]['contact'] }}</small>
+                </a>
+              </div>
+
+            {% endfor %}
+
+            {% endif %}
             <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
                 Delete Mural
               </button>

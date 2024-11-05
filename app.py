@@ -181,6 +181,25 @@ def mural_json(mural: Mural):
     }
 
 """
+Create a JSON object for Feedback
+"""
+def feedback_json(feedback: Feedback):
+    feedback = feedback[0]
+    dt = datetime.now(timezone.utc)
+    dt = dt.replace(tzinfo=None)
+    fb_dt = feedback.time
+    diff = dt-fb_dt
+
+    return {
+        "id": feedback.feedback_id,
+        "mural_id": feedback.mural_id,
+        "notes": feedback.notes,
+        "contact": feedback.contact,
+        "approxtime": "{0} days ago".format(diff.days), #approx_time,
+        "exacttime": fb_dt
+    }
+
+"""
 Create a JSON object for an artist
 """
 def artist_json(artist: Artist):
@@ -249,6 +268,15 @@ def getAllMurals():
             .order_by(Mural.title.asc()),
         per_page=200,
     ).items))
+
+"""
+Get Feedback for a Mural
+"""
+def getMuralFeedback(mural_id):
+    return list(map(feedback_json, db.session.execute(
+        db.select(Feedback)
+            .where(Feedback.mural_id == mural_id)
+    )))
 
 """
 Get all murals from year
@@ -626,7 +654,7 @@ Route to edit mural page
 @app.route('/edit/<id>')
 @debug_only
 def edit(id):
-    return render_template("edit.html", muralDetails=getMural(id))
+    return render_template("edit.html", muralDetails=getMural(id), muralFeedback=getMuralFeedback(id))
 
 """
 Route to the admin panel
