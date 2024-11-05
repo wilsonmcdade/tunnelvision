@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func, ForeignKey, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from s3 import get_bucket, get_file_s3, upload_file, remove_file, get_file_list
+from s3 import get_bucket, get_file_s3, upload_file, remove_file, get_file_list, get_file
 from typing import Optional
 import json_log_formatter
 
@@ -487,6 +487,38 @@ def debug_only(f):
         return abort(404)
     return wrapped
 
+def make_thumbnail(mural_id, file):
+
+    with PilImage.open(file) as im:
+        if (im.width == 256 or im.height == 256):
+            # Already a thumbnail
+            #print("Already a thumbnail...")
+            return False
+        im = crop_center(im, min(im.size), min(im.size))
+        im.thumbnail((256,256))
+
+        im = im.convert("RGB")
+        im.save(file + ".thumbnail", "JPEG")
+
+    with open(file + ".thumbnail", "rb") as tb:
+
+        file_hash = hashlib.md5(tb.read()).hexdigest()
+        tb.seek(0)
+
+        # Upload thumnail version
+        upload_file(s3_bucket, file_hash, tb, (file + ".thumbnail"))
+
+        img = Image(
+            imghash=file_hash,
+            ordering=0
+        )
+        db.session.add(img)
+        db.session.flush()
+
+        img_id = img.id
+        db.session.add(ImageMuralRelation(image_id=img_id, mural_id=mural_id))
+        db.session.commit()
+
 """
 Delete artist and all relations from DB
 """
@@ -695,6 +727,24 @@ def editImage(id):
     image.alttext = request.form["alttext"]
     db.session.commit()
     return ('', 204)
+
+"""
+Replaces mural thumbnail with selected image
+"""
+@app.route('/makethumbnail', methods=["POST"])
+@debug_only
+def makeThumbnail():
+    mural_id  = request.args.get('muralid', None)
+    image_id  = request.args.get('imageid', None)
+    image = db.session.execute(
+        db.select(Image)
+            .where(Image.id == image_id)
+    ).scalar_one()
+    newfilename = '/tmp/{0}.thumb'.format(image.id)
+    get_file(app.config['BUCKET_NAME'], image.imghash, newfilename, app.config['S3_KEY'], app.config['S3_SECRET'])
+    make_thumbnail(mural_id, newfilename)
+    
+    return redirect("/edit/{0}".format(mural_id))
 
 """
 Route to delete image

@@ -35,6 +35,9 @@
         <div class="col-8 mb-3">
             {% for image in muralDetails["images"]: %}
             <img style="width:100%;" src="{{ muralDetails['images'][loop.index-1]['imgurl'] }}">
+            <form action="/makethumbnail?muralid={{ muralDetails['id'] }}&imageid={{ muralDetails['images'][loop.index-1]['id'] }}" method="post">
+                <button type="submit" class="btn btn-primary">Make this the thumbnail</button>
+            </form>
             <form action="/editimage/{{ muralDetails['images'][loop.index-1]['id'] }}" method="post">
                 <div class="mb-3">
                     <label for="caption" class="form-label">Caption</label>
@@ -72,6 +75,9 @@
                     {% endif %}
                 </div>
             </div>
+            <h1>Thumbnail</h1>
+            <img src="{{ muralDetails['thumbnail'] }}">
+            <h1>General Information</h1>
             <form action="/editmural/{{ muralDetails['id'] }}" method="post">
                 <div class="mb-3">
                     <label for="notes" class="form-label">Notes</label>
