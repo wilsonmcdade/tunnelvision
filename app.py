@@ -172,6 +172,7 @@ def mural_json(mural: Mural):
         "notes": mural.notes,
         "prevmuralid": prevmuralid,
         "nextmuralid": mural.nextmuralid,
+        "private_notes": mural.private_notes,
         "active": mural.active,
         "thumbnail": thumbnail,
         "artists": artists,
