@@ -28,6 +28,7 @@ class Mural(Base):
     artistknown: Mapped[bool]
     remarks: Mapped[str]
     notes: Mapped[str]
+    private_notes: Mapped[str]
     year: Mapped[int]
     location: Mapped[str]
     nextmuralid: Mapped[Optional[int]] = mapped_column(ForeignKey("murals.id"))
@@ -695,6 +696,7 @@ def editMural(id):
     m.remarks = request.form['remarks']
     m.year = int(request.form['year'])
     m.location = request.form['location']
+    m.private_notes = request.form['private_notes']
     db.session.commit()
     return ('', 204)
 
@@ -730,17 +732,39 @@ def editImage(id):
 
 """
 Replaces mural thumbnail with selected image
+Route:
+    /makethumbnail?muralid=m_id&imageid=i_id
 """
 @app.route('/makethumbnail', methods=["POST"])
 @debug_only
 def makeThumbnail():
     mural_id  = request.args.get('muralid', None)
     image_id  = request.args.get('imageid', None)
+
+    # Delete references to current thumbnail
+    curr_thumbnail = db.session.execute(
+        db.select(Image)
+            .join(ImageMuralRelation, ImageMuralRelation.image_id == Image.id)
+            .where(ImageMuralRelation.mural_id == mural_id)
+            .filter(Image.ordering == 0)
+    ).scalar_one()
+
+    db.session.execute(
+        db.delete(ImageMuralRelation)
+            .where(ImageMuralRelation.image_id == curr_thumbnail.id)
+    )
+    db.session.execute(
+        db.delete(Image)
+            .where(Image.id == curr_thumbnail.id)
+    )
+
+    # Download base photo, turn it into thumbnail
     image = db.session.execute(
         db.select(Image)
             .where(Image.id == image_id)
     ).scalar_one()
     newfilename = '/tmp/{0}.thumb'.format(image.id)
+
     get_file(app.config['BUCKET_NAME'], image.imghash, newfilename, app.config['S3_KEY'], app.config['S3_SECRET'])
     make_thumbnail(mural_id, newfilename)
     
