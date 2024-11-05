@@ -1,5 +1,28 @@
 {% extends "header.html" %}
 {% block dynamic_content %}
+ 
+  <!-- Modal -->
+  <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="staticBackdropLabel">Warning! You are about to delete an entry!</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+            <p>Deleting this entry will delete all associated media, including imagery, feedback, artist, and all details of the piece.</p>
+            <p><b>This cannot be undone.</b></p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+          <form action="/delete/{{ muralDetails['id'] }}" method="post">
+          <button type="submit" class="btn btn-danger">Delete Mural</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  
 
 <div class="container">
     <h1>{{ muralDetails["title"] }} </h1>
@@ -60,10 +83,10 @@
             <li><a href="/artist/{{ artist['id'] }}">{{artist["name"]}}</a></li>
             {% endfor %}
             </ul>
-            {% endif %}
-            <form action="/delete/{{ muralDetails['id'] }}" method="post">
-            <button type="submit" class="btn btn-danger">Delete Mural</button>
-            </form>
+            {% endif %}<!-- Button trigger modal -->
+            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
+                Delete Mural
+              </button>
         </div>
     </div>
     <script>
