@@ -173,7 +173,7 @@ def mural_json(mural: Mural):
         "prevmuralid": prevmuralid,
         "nextmuralid": mural.nextmuralid,
         "private_notes": mural.private_notes,
-        "active": mural.active,
+        "active": "checked" if mural.active else "unchecked",
         "thumbnail": thumbnail,
         "artists": artists,
         "images": images,
@@ -721,6 +721,8 @@ def editMural(id):
     m = db.session.execute(
         db.select(Mural).where(Mural.id == id)
     ).scalar_one()
+
+    m.active = True if 'active' in request.form else False
     m.notes = request.form['notes']
     m.remarks = request.form['remarks']
     m.year = int(request.form['year'])
@@ -855,7 +857,8 @@ def upload():
         artistknown=artistKnown,
         notes=request.form["notes"],
         year=request.form["year"],
-        location=request.form["location"]
+        location=request.form["location"],
+        active=False
     )
     db.session.add(mural)
     db.session.flush()

@@ -80,6 +80,10 @@
             <h1>General Information</h1>
             <form action="/editmural/{{ muralDetails['id'] }}" method="post">
                 <div class="mb-3">
+                    <label for="active" class="form-label">Active</label>
+                    <input {{ muralDetails['active'] }} type="checkbox" id="active" name="active">
+                </div>
+                <div class="mb-3">
                     <label for="notes" class="form-label">Notes</label>
                     <input value="{{ muralDetails['notes'] }}" type="text" class="form-control" id="notes" name="notes" required>
                 </div>
