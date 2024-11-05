@@ -25,7 +25,12 @@
   
 
 <div class="container">
-    <h1>{{ muralDetails["title"] }} </h1>
+    <form action="/edittitle/{{ muralDetails['id'] }}" method="post">
+        <div class="d-grid gap-2 d-md-block">
+            <input value="{{ muralDetails['title'] }}" type="text" class="form-control" id="title" name="title" required>
+            <button type="submit" class="btn btn-primary">Edit Title</button>
+        </div>
+    </form>
     <div class="row">
         <div class="col-8 mb-3">
             {% for image in muralDetails["images"]: %}
@@ -67,14 +72,25 @@
                     {% endif %}
                 </div>
             </div>
-            <input type="checkbox" {% if muralDetails['active'] %} checked {% endif %} name="active">
-            <label for="active">Active</label>
-            <h3>Notes:</h3>
-            <p>{{ muralDetails["notes"] }}</p>
-            <h3>Year:</h3>
-            <p><a href="/year/{{ muralDetails['year'] }}">{{ muralDetails["year"] }}</a></p>
-            <h3>Location:</h3>
-            <p>{{ muralDetails["location"] }} </p>
+            <form action="/editmural/{{ muralDetails['id'] }}" method="post">
+                <div class="mb-3">
+                    <label for="notes" class="form-label">Notes</label>
+                    <input value="{{ muralDetails['notes'] }}" type="text" class="form-control" id="notes" name="notes" required>
+                </div>
+                <div class="mb-3">
+                    <label for="remarks" class="form-label">Remarks</label>
+                    <input value="{{ muralDetails['remarks'] }}" type="text" class="form-control" id="remarks" name="remarks" required>
+                </div>
+                <div class="mb-3">
+                    <label for="year" class="form-label">Year</label>
+                    <input value="{{ muralDetails['year'] }}" type="text" class="form-control" id="year" name="year" required>
+                </div>
+                <div class="mb-3">
+                    <label for="location" class="form-label">Location</label>
+                    <input value="{{ muralDetails['location'] }}" type="text" class="form-control" id="location" name="location" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Edit Details</button>
+            </form>
             
             {% if muralDetails["artists"]|length > 0: %}
             <h3>Artists:</h3>

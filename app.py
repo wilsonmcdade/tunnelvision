@@ -521,6 +521,15 @@ def deleteMuralEntry(id):
             .where(ArtistMuralRelation.mural_id == id)
     )
     db.session.execute(
+        db.delete(MuralTag)
+            .where(MuralTag.mural_id == id)
+    )
+    db.session.execute(
+        db.delete(Feedback)
+            .where(Feedback.mural_id == id)
+    )
+    db.session.query(Mural).filter_by(nextmuralid = id).update({'nextmuralid' : None})
+    db.session.execute(
         db.delete(Mural)
             .where(Mural.id == id)
     )
@@ -639,6 +648,38 @@ def delete(id):
         return redirect("/admin")
     else:
         return render_template("404.html"), 404
+
+"""
+Route to edit mural details
+Sets all trivial fields based on http form
+"""
+@app.route('/editmural/<id>', methods=['POST'])
+@debug_only
+def editMural(id):
+    m = db.session.execute(
+        db.select(Mural).where(Mural.id == id)
+    ).scalar_one()
+    m.notes = request.form['notes']
+    m.remarks = request.form['remarks']
+    m.year = int(request.form['year'])
+    m.location = request.form['location']
+    db.session.commit()
+    return ('', 204)
+
+
+"""
+Route to edit mural title
+Sets mural title based on http form
+"""
+@app.route('/edittitle/<id>', methods=['POST'])
+@debug_only
+def editTitle(id):
+    m = db.session.execute(
+        db.select(Mural).where(Mural.id == id)
+    ).scalar_one()
+    m.title = request.form['title']
+    db.session.commit()
+    return ('', 204)
 
 """
 Route to edit image details
