@@ -75,8 +75,17 @@
                     {% endif %}
                 </div>
             </div>
-            <h1>Thumbnail</h1>
-            <img src="{{ muralDetails['thumbnail'] }}">
+              <div class="card col-lg-6 text-center" 
+                <div>
+                    <a style="text-decoration: none;" href="/murals/{{ muralDetails['id'] }}">
+                    <img class="card-img-top" src="{{ muralDetails['thumbnail'] }}">
+                    <div class="card-body">
+                        <p>{{ muralDetails['title'] }}</p>
+                        <p>({% if muralDetails["year"] != 0 %}{{ muralDetails["year"] }}{% else %}Unknown{% endif %})</p>
+                    </div>
+                    </div>
+                </a>
+            <div class="row">
             <h1>General Information</h1>
             <form action="/editmural/{{ muralDetails['id'] }}" method="post">
                 <div class="mb-3">
@@ -111,7 +120,7 @@
                 </div>
                 <button type="submit" class="btn btn-primary">Edit Details</button>
             </form>
-            
+            </div>
             {% if muralDetails["artists"]|length > 0: %}
             <h3>Artists:</h3>
             <ul>
