@@ -17,6 +17,12 @@ Catalog - TunnelVision
         </form>
     </div>
 
+    {% if tags | length > 0 %}
+    {% for tag in tags: %}
+    <a href="/tags?t={{ tag }}"><p class="chip">{{ tag }}</p></a>
+    {% endfor %}
+    {% endif %}
+
     {% if murals | length > 0 %}
     <div class="container-fluid">
         <div class="row">

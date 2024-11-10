@@ -257,6 +257,14 @@ def getAllMuralsFromYear(year):
     ).items))
 
 """
+Get all tags
+"""
+def getAllTags():
+    return list(db.session.execute(
+        db.select(Tag.name)
+    ).scalars())
+
+"""
 Get all murals from artist given artist ID
 """
 def getAllMuralsFromArtist(id):
@@ -399,7 +407,7 @@ def about():
 def catalog():
     query = request.args.get("q")
     if query == None:
-        return render_template("catalog.html", q=query, murals=getMuralsPaginated(0))
+        return render_template("catalog.html", q=query, murals=getMuralsPaginated(0), tags=getAllTags())
     else:
         return render_template("filtered.html", pageTitle="Query - {0}".format(query), subHeading="Search Query", q=query, murals=searchMurals(query))
 
