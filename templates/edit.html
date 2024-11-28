@@ -26,10 +26,8 @@
 
 <div class="container">
     <form action="/edittitle/{{ muralDetails['id'] }}" method="post">
-        <div class="d-grid gap-2 d-md-block">
             <input value="{{ muralDetails['title'] }}" type="text" class="form-control" id="title" name="title" required>
             <button type="submit" class="btn btn-primary">Edit Title</button>
-        </div>
     </form>
     <div class="row">
         <div class="col-8 mb-3">
@@ -41,11 +39,13 @@
             <form action="/editimage/{{ muralDetails['images'][loop.index-1]['id'] }}" method="post">
                 <div class="mb-3">
                     <label for="caption" class="form-label">Caption</label>
-                    <input value="{{ muralDetails['images'][loop.index-1]['caption'] }}" type="text" class="form-control" id="caption" name="caption" required>
+                    <p class="thin">Write a caption for this image. This should not be a description, as that is covered by the alt text and description fields for the mural. Also include attribution here.</p>
+                    <textarea value="{{ muralDetails['images'][loop.index-1]['caption'] }}" type="text" class="form-control" id="caption" name="caption"></textarea>
                 </div>
                 <div class="mb-3">
                     <label for="alttext" class="form-label">Alt Text</label>
-                    <input value="{{ muralDetails['images'][loop.index-1]['alttext'] }}" type="text" class="form-control" id="alttext" name="alttext" required>
+                    <p class="thin">Write a descriptive caption of this image in particular. Refer to <a href="https://developers.google.com/tech-writing/accessibility/self-study/write-alt-text#write-useful-text">this article</a> on writing good alt text.</p>
+                    <input value="{{ muralDetails['images'][loop.index-1]['alttext'] }}" type="text" class="form-control" id="alttext" name="alttext">
                 </div>
                 <button type="submit" class="btn btn-primary">Edit Details</button>
                 </form>
@@ -75,43 +75,65 @@
                     {% endif %}
                 </div>
             </div>
-              <div class="card col-lg-6 text-center" 
-                <div>
-                    <a style="text-decoration: none;" href="/murals/{{ muralDetails['id'] }}">
-                    <img class="card-img-top" src="{{ muralDetails['thumbnail'] }}">
-                    <div class="card-body">
-                        <p>{{ muralDetails['title'] }}</p>
-                        <p>({% if muralDetails["year"] != 0 %}{{ muralDetails["year"] }}{% else %}Unknown{% endif %})</p>
-                    </div>
-                    </div>
-                </a>
-            <div class="row">
-            <h1>General Information</h1>
-            <form action="/editmural/{{ muralDetails['id'] }}" method="post">
+            <h1>Preview:</h1>
+            <div class="card col-lg-6 text-center">
+              
+              <div>
+                  <a style="text-decoration: none;" href="/murals/{{ muralDetails['id'] }}">
+                  <img class="card-img-top" src="{{ muralDetails['thumbnail'] }}">
+                  <div class="card-body">
+                      <p>{{ muralDetails['title'] }}</p>
+                      <p>({% if muralDetails["year"] != 0 %}{{ muralDetails["year"] }}{% else %}Unknown{% endif %})</p>
+                  </div>
+              </a>
+              </div>
+              </div>
+              <h1>General Information</h1>
+              <form action="/editmural/{{ muralDetails['id'] }}" method="post">
+                <label for="tags">Tags:</label>
+                <p class="thin">Create more tags on the <a href="/admin">Admin Panel</a>.</p>
+                <select name="tags" class="form-select form-select-sm" multiple aria-label="multiple select">
+                  {% for t in tags %}
+                  <option {{ 'selected' if t.name in muralDetails['tags'] else '' }} value="{{ t.name }}">{{ t.name }}</option>
+                  {% endfor %}
+                </select>
+                <label for="artists">Artists:</label>
+                <p class="thin">Create more artists on the <a href="/admin">Admin Panel</a>.</p>
+                <select name="artists" class="form-select form-select-sm" multiple aria-label="multiple select">
+                  {% for a in artists %}
+                  <option {{ 'selected' if a.id in muralDetails['artists']|map(attribute='id') else '' }} value="{{ a.id }}">{{ a.name }}</option>
+                  {% endfor %}
+                </select>
+                {{ muralDetails['artists'] }}
                 <div class="mb-3">
                     <label for="active" class="form-label">Active</label>
-                    <p style="font-weight: 300">Should this mural be on the catalog? Inactive murals can still be searched.</p>
                     <input {{ muralDetails['active'] }} type="checkbox" id="active" name="active">
+                    <p class="thin">Should this mural be on the catalog? Inactive murals can still be searched.</p>
                 </div>
                 <div class="mb-3">
                     <label for="notes" class="form-label">Description</label>
-                    <p style="font-weight: 300">Visually describe this piece. Please be as descriptive as possible and use terms that could be aid in the discoverability of the piece in search engines.</p>
-                    <textarea value="{{ muralDetails['notes'] }}" type="text" class="form-control" id="notes" name="notes" required></textarea>
+                    <p class="thin">Visually describe this piece. Please be as descriptive as possible and use terms that could be aid in the discoverability of the piece in search engines.</p>
+                    <textarea value="{{ muralDetails['notes'] }}" type="text" class="form-control" id="notes" name="notes"></textarea>
                 </div>
                 <div class="mb-3">
                     <label for="remarks" class="form-label">Remarks</label>
-                    <p style="font-weight: 300">Use the remarks field to add any additional details that could be useful about a piece. These details could be sourced from suggestions, common knowledge, or other casual sources. Please end your remarks entry with your name and the date when you wrote it.</p>
+                    <p class="thin">Use the remarks field to add any additional details that could be useful about a piece. These details could be sourced from suggestions, common knowledge, or other casual sources. Please end your remarks entry with your name and the date when you wrote it.</p>
                     <textarea value="{{ muralDetails['remarks'] }}" type="text" class="form-control" id="remarks" name="remarks"></textarea>
                 </div>
                 <div class="mb-3">
                     <label for="year" class="form-label">Year</label>
-                    <p style="font-weight: 300">The approximate year this piece was painted. If painted over two years, use the lowest year. If the year is unknown, enter 0.</p>
+                    <p class="thin">The approximate year this piece was painted. If painted over two years, use the lowest year. If the year is unknown, enter 0.</p>
                     <input value="{{ muralDetails['year'] }}" type="text" class="form-control" id="year" name="year" required>
                 </div>
                 <div class="mb-3">
                     <label for="location" class="form-label">Location</label>
-                    <p style="font-weight: 300">Describe the location of the mural. You don't have to have GPS coordinates, just say what building it's under, or if it's near a landmark like Corner Store.</p>
-                    <input value="{{ muralDetails['location'] }}" type="text" class="form-control" id="location" name="location" required>
+                    <p class="thin">Describe the location of the mural. You don't have to have GPS coordinates, just say what building it's under, or if it's near a landmark like Corner Store.</p>
+                    <input value="{{ muralDetails['location'] }}" type="text" class="form-control" id="location" name="location">
+                </div>
+                <div class="mb-3">
+                  <label for="location" class="form-label">Spotify</label>
+                  <p class="thin">Add the song ID for a related song on Spotify. Copy the "song link" and paste the code after the "track/" portion of the URL. Also trim the "?si=xxx" portion of the url.</p>
+                  <input value="{{ muralDetails['spotify'] }}" type="text" class="form-control" id="spotify" name="spotify">
                 </div>
                 <h1>Private Information</h1>
                 <div class="mb-3">
@@ -119,23 +141,20 @@
                     <textarea value="{{ muralDetails['private_notes'] }}" type="text" class="form-control" id="private_notes" name="private_notes"></textarea>
                 </div>
                 <button type="submit" class="btn btn-primary">Edit Details</button>
-            </form>
-            </div>
-            {% if muralDetails["artists"]|length > 0: %}
-            <h3>Artists:</h3>
-            <ul>
-            {% for artist in muralDetails["artists"]: %}
-            <li><a href="/artist/{{ artist['id'] }}">{{artist["name"]}}</a></li>
-            {% endfor %}
-            </ul>
-            {% endif %}
+              </form>
+              {% if muralDetails["artists"]|length > 0: %}
+              <h3>Artists:</h3>
+              <ul>
+              {% for artist in muralDetails["artists"]: %}
+              <li><a href="/artist/{{ artist['id'] }}">{{artist["name"]}}</a></li>
+              {% endfor %}
+              </ul>
+              {% endif %}
 
-            {% if muralFeedback|length > 0 %}
-
-            <h1>Feedback:</h1>
-
-            {% for feedback in muralFeedback: %}
-            <div class="list-group">
+              {% if muralFeedback|length > 0 %}
+              <h1>Feedback:</h1>
+              {% for feedback in muralFeedback: %}
+              <div class="list-group">
                 <a class="list-group-item">
                   <div class="d-flex w-100 justify-content-between">
                     <p class="mb-1"><b>Notes:</b> {{ muralFeedback[loop.index-1]['notes'] }}</p>
@@ -144,15 +163,14 @@
                   <small><b>Contact:</b> {{ muralFeedback[loop.index-1]['contact'] }}</small>
                 </a>
               </div>
+              {% endfor %}
+              {% endif %}
 
-            {% endfor %}
-
-            {% endif %}
-            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
+              <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
                 Delete Mural
               </button>
-        </div>
-    </div>
+            </div>
+          </div>
     <script>
         document.addEventListener('keydown', function(event) {
           switch(event.key) {
@@ -168,7 +186,7 @@
             {% endif %}
           }
         });
-        </script>
+    </script>
 </div>
 
 {% endblock %}

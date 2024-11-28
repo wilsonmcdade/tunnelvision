@@ -177,7 +177,8 @@ def mural_json(mural: Mural):
         "thumbnail": thumbnail,
         "artists": artists,
         "images": images,
-        "spotify": mural.spotify
+        "spotify": mural.spotify,
+        "tags": getTags(mural.id)
     }
 
 """
@@ -268,6 +269,14 @@ def getAllMurals():
             .order_by(Mural.title.asc()),
         per_page=200,
     ).items))
+
+"""
+Get all tags
+"""
+def getAllTags():
+    return list(db.session.execute(
+            db.select(Tag)
+        ).scalars())
 
 """
 Get Feedback for a Mural
@@ -464,7 +473,7 @@ Page for specific mural details
 @app.route("/murals/<id>")
 def mural(id):
     if (checkMuralExists(id)):
-        return render_template("mural.html", muralDetails=getMural(id), tags=getTags(id), spotify=getMural(id)['spotify'])
+        return render_template("mural.html", muralDetails=getMural(id), spotify=getMural(id)['spotify'])
     else:
         return render_template("404.html"), 404
 
@@ -495,9 +504,9 @@ def year(year):
 """
 Generic error handler
 """
-@app.errorhandler(HTTPException)
-def not_found(e):
-    return render_template("404.html"), 404
+#@app.errorhandler(HTTPException)
+#def not_found(e):
+#    return render_template("404.html"), 404
 
 ########################
 #
@@ -654,7 +663,7 @@ Route to edit mural page
 @app.route('/edit/<id>')
 @debug_only
 def edit(id):
-    return render_template("edit.html", muralDetails=getMural(id), muralFeedback=getMuralFeedback(id))
+    return render_template("edit.html", muralDetails=getMural(id), muralFeedback=getMuralFeedback(id), tags=getAllTags(), artists=getAllArtists())
 
 """
 Route to the admin panel
@@ -713,7 +722,7 @@ def delete(id):
 
 """
 Route to edit mural details
-Sets all trivial fields based on http form
+Sets all fields based on http form
 """
 @app.route('/editmural/<id>', methods=['POST'])
 @debug_only
@@ -722,12 +731,64 @@ def editMural(id):
         db.select(Mural).where(Mural.id == id)
     ).scalar_one()
 
+    # Remove existing tag relationships
+    db.session.execute(
+        db.delete(MuralTag)
+            .where(MuralTag.mural_id == m.id)
+    )
+
+    # Relate mural and submitted tags
+    if 'tags' in request.form:
+        if request.form['tags'] is list:
+            for tag in request.form['tags']:
+                tag_id = db.session.execute(
+                    db.select(Tag.id)
+                        .where(Tag.name == tag)
+                ).scalar()
+
+                rel = MuralTag(tag_id=tag_id, mural_id=m.id)
+                db.session.add(rel)
+        else:
+            tag_id = db.session.execute(
+                db.select(Tag.id)
+                    .where(Tag.name == request.form['tags'])
+            ).scalar()
+
+            rel = MuralTag(tag_id=tag_id, mural_id=m.id)
+            db.session.add(rel)
+
+    # Remove existing artist relationships
+    # (If artists is not in the form submission, the multiselect was blank)
+    db.session.execute(
+        db.delete(ArtistMuralRelation)
+            .where(ArtistMuralRelation.mural_id == m.id)
+    )
+        
+    if 'artists' in request.form:
+        # Relate mural and submitted artists
+        if request.form.getlist('artists') is list:
+            print("True")
+            for artist_id in request.form.getlist('artists'):
+                rel = ArtistMuralRelation(artist_id=int(artist_id), mural_id=m.id)
+                db.session.add(rel)
+        else:
+            rel = ArtistMuralRelation(artist_id=request.form['artists'], mural_id=m.id)
+            db.session.add(rel)
+
     m.active = True if 'active' in request.form else False
-    m.notes = request.form['notes']
-    m.remarks = request.form['remarks']
-    m.year = int(request.form['year'])
-    m.location = request.form['location']
-    m.private_notes = request.form['private_notes']
+
+    if m.notes is not None:
+        m.notes = request.form['notes']
+    if m.remarks is not None:
+        m.remarks = request.form['remarks']
+    if m.year is not None:
+        m.year = int(request.form['year'])
+    if m.location is not None:
+        m.location = request.form['location']
+    if m.private_notes is not None:
+        m.private_notes = request.form['private_notes']
+    if m.spotify is not None:
+        m.spotify = request.form["spotify"]
     db.session.commit()
     return ('', 204)
 
@@ -756,8 +817,11 @@ def editImage(id):
     image = db.session.execute(
         db.select(Image).where(Image.id == id)
     ).scalar_one()
-    image.caption = request.form["caption"]
-    image.alttext = request.form["alttext"]
+
+    if image.caption is not None:
+        image.caption = request.form["caption"]
+    if image.alttext is not None:
+        image.alttext = request.form["alttext"]
     db.session.commit()
     return ('', 204)
 
@@ -789,6 +853,9 @@ def makeThumbnail():
             .where(Image.id == curr_thumbnail.id)
     )
 
+    # Remove file from S3
+    remove_file(s3_bucket, curr_thumbnail.imghash)
+
     # Download base photo, turn it into thumbnail
     image = db.session.execute(
         db.select(Image)
@@ -813,17 +880,17 @@ def deleteImage(id):
 
     for image in images:
         remove_file(s3_bucket, image.imghash)
-    db.session.execute(
-        db.delete(ImageMuralRelation)
-            .where(ImageMuralRelation.image_id == id)
-    )
-    db.session.execute(
-        db.delete(Image)
-            .where(Image.id == id)
-    )
+        db.session.execute(
+            db.delete(ImageMuralRelation)
+                .where(ImageMuralRelation.image_id == id)
+        )
+        db.session.execute(
+            db.delete(Image)
+                .where(Image.id == id)
+        )
     db.session.commit()
 
-    return redirect("/edit/{0}".format(id))
+    return ('', 204)
 
 """
 Route to upload new image

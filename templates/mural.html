@@ -58,7 +58,7 @@
                         <img class="main-img" alt="{{ muralDetails['images'][loop.index-1]['alttext'] }}" src="{{ muralDetails['images'][loop.index-1]['imgurl'] }}">
                         <div class="carousel-caption d-none d-md-block ">
                             {% if muralDetails['images'][loop.index-1]['caption'] != None %}
-                            <p class="banner-value no-a-styles">{{ muralDetails['images'][loop.index-1]['caption'] }}</p>
+                            <pre style="font-family:inherit;font-size:inherit" class="banner-value no-a-styles">{{ muralDetails['images'][loop.index-1]['caption'] }}</pre>
                             {% endif %}
                             {% if muralDetails['images'][loop.index-1]['fullsizeimage']%}
                             <p class="banner-value"><a class="no-a-styles" href="{{ muralDetails['images'][loop.index-1]['fullsizeimage'] }}">Full Size Image</a></p>
@@ -142,10 +142,10 @@
                                 <form action="/suggestion" method="post" enctype="multipart/form-data">
                                     <div class="mb-3">
                                         <label for="notes" class="form-label"><b>Notes</b></label>
-                                        <p style="font-weight: 300">What could be improved with this mural listing?</p>
+                                        <p class="thin">What could be improved with this mural listing?</p>
                                         <input type="text" class="form-control" style="margin-bottom: 10px; margin-top: -10px;" id="notes" name="notes" required>
                                         <label for="notes" class="form-label"><b>Your Contact</b></label>
-                                        <p style="font-weight: 300">How can we reach you to follow up?</p>
+                                        <p class="thin">How can we reach you to follow up?</p>
                                         <input type="text" class="form-control" id="contact" name="contact">
                                         <input type="text" class="visually-hidden" id="muralid" name="muralid" value="{{ muralDetails['id'] }}">
                                     </div>
