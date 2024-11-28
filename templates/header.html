@@ -9,7 +9,7 @@
         <a style="text-decoration: none; color:inherit" href="/murals/{{ mural['id'] }}">
         <img class="card-img-top" src="{{ mural['thumbnail'] }}">
             {% if mural['tags']|length > 0 %}
-            <div style="padding-top: 5px" class="card-body">
+            <div class="card-body">
             <p style="margin-bottom: 2px;">{{ mural['title'] }}</p>
             <p style="margin-bottom: 4px">({% if mural["year"] != 0 %}{{ mural["year"] }}{% else %}Unknown{% endif %})</p>
             {% for tag in mural['tags'] %}
@@ -75,7 +75,7 @@
             .chip.small {
                 padding: 0 15px;
                 height: 30px;
-                font-size: 10px;
+                font-size: 9px;
                 line-height: 30px;
                 border-radius: 15px;
             }
