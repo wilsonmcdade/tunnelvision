@@ -94,9 +94,9 @@
             <h3>Location:</h3>
             <p>{{ muralDetails["location"] }} </p>
 
-            {% if tags|length > 0 %}
+            {% if muralDetails['tags']|length > 0 %}
             <h3>Tags:</h3>
-            {% for tag in tags: %}
+            {% for tag in muralDetails['tags']: %}
             <a href="/tags?t={{ tag }}"><p class="chip">{{ tag }}</p></a>
             {% endfor %}
             {% endif %}

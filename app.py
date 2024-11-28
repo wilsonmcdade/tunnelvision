@@ -49,6 +49,8 @@ class Image(Base):
     alttext: Mapped[str]
     ordering: Mapped[int]
     imghash: Mapped[str]
+    attribution: Mapped[str]
+    datecreated: Mapped[datetime]
     fullsizehash: Mapped[Optional[str]]
 
 class Tag(Base):
@@ -739,19 +741,10 @@ def editMural(id):
 
     # Relate mural and submitted tags
     if 'tags' in request.form:
-        if request.form['tags'] is list:
-            for tag in request.form['tags']:
-                tag_id = db.session.execute(
-                    db.select(Tag.id)
-                        .where(Tag.name == tag)
-                ).scalar()
-
-                rel = MuralTag(tag_id=tag_id, mural_id=m.id)
-                db.session.add(rel)
-        else:
+        for tag in request.form.getlist('tags'):
             tag_id = db.session.execute(
                 db.select(Tag.id)
-                    .where(Tag.name == request.form['tags'])
+                    .where(Tag.name == tag)
             ).scalar()
 
             rel = MuralTag(tag_id=tag_id, mural_id=m.id)
@@ -766,13 +759,8 @@ def editMural(id):
         
     if 'artists' in request.form:
         # Relate mural and submitted artists
-        if request.form.getlist('artists') is list:
-            print("True")
-            for artist_id in request.form.getlist('artists'):
-                rel = ArtistMuralRelation(artist_id=int(artist_id), mural_id=m.id)
-                db.session.add(rel)
-        else:
-            rel = ArtistMuralRelation(artist_id=request.form['artists'], mural_id=m.id)
+        for artist_id in request.form.getlist('artists'):
+            rel = ArtistMuralRelation(artist_id=int(artist_id), mural_id=m.id)
             db.session.add(rel)
 
     m.active = True if 'active' in request.form else False
@@ -818,10 +806,14 @@ def editImage(id):
         db.select(Image).where(Image.id == id)
     ).scalar_one()
 
-    if image.caption is not None:
+    if image.caption is not None and request.form['caption'].strip() != '':
         image.caption = request.form["caption"]
-    if image.alttext is not None:
+    if image.alttext is not None and request.form['alttext'].strip() != '':
         image.alttext = request.form["alttext"]
+    if image.attribution is not None and request.form['attribution'].strip() != '':
+        image.attribution = request.form["attribution"]
+    if image.datecreated is not None and request.form['datecreated'].strip() != '':
+        image.datecreated = request.form["datecreated"]
     db.session.commit()
     return ('', 204)
 
