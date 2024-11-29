@@ -40,7 +40,7 @@
                 <div class="mb-3">
                     <label for="caption" class="form-label">Caption</label>
                     <p class="thin">Write a caption for this image. This should not be a description, as that is covered by the alt text and description fields for the mural. Also include attribution here.</p>
-                    <textarea value="{{ muralDetails['images'][loop.index-1]['caption'] }}" type="text" class="form-control" id="caption" name="caption"></textarea>
+                    <textarea type="text" class="form-control" id="caption" name="caption">{{ muralDetails['images'][loop.index-1]['caption'] }}</textarea>
                 </div>
                 <div class="mb-3">
                     <label for="alttext" class="form-label">Alt Text</label>
@@ -113,6 +113,7 @@
                 <label for="tags">Tags:</label>
                 <p class="thin">Create more tags on the <a href="/admin">Admin Panel</a>.</p>
                 <select name="tags" class="form-select form-select-sm" multiple aria-label="multiple select">
+                  <option {{ 'selected' if muralDetails['tags']|length == 0 else '' }} value="No Tags">No Tags</option>
                   {% for t in tags %}
                   <option {{ 'selected' if t.name in muralDetails['tags'] else '' }} value="{{ t.name }}">{{ t.name }}</option>
                   {% endfor %}
@@ -132,12 +133,12 @@
                 <div class="mb-3">
                     <label for="notes" class="form-label">Description</label>
                     <p class="thin">Visually describe this piece. Please be as descriptive as possible and use terms that could be aid in the discoverability of the piece in search engines.</p>
-                    <textarea value="{{ muralDetails['notes'] }}" type="text" class="form-control" id="notes" name="notes"></textarea>
+                    <textarea type="text" class="form-control" id="notes" name="notes">{{ muralDetails['notes'] }}</textarea>
                 </div>
                 <div class="mb-3">
                     <label for="remarks" class="form-label">Remarks</label>
                     <p class="thin">Use the remarks field to add any additional details that could be useful about a piece. These details could be sourced from suggestions, common knowledge, or other casual sources. Please end your remarks entry with your name and the date when you wrote it.</p>
-                    <textarea value="{{ muralDetails['remarks'] }}" type="text" class="form-control" id="remarks" name="remarks"></textarea>
+                    <textarea type="text" class="form-control" id="remarks" name="remarks">{{ muralDetails['remarks'] }}</textarea>
                 </div>
                 <div class="mb-3">
                     <label for="year" class="form-label">Year</label>
@@ -157,7 +158,7 @@
                 <h1>Private Information</h1>
                 <div class="mb-3">
                     <label for="location" class="form-label">Private Notes</label>
-                    <textarea value="{{ muralDetails['private_notes'] }}" type="text" class="form-control" id="private_notes" name="private_notes"></textarea>
+                    <textarea type="text" class="form-control" id="private_notes" name="private_notes">{{ muralDetails['private_notes'] }}</textarea>
                 </div>
                 <button type="submit" class="btn btn-primary">Edit Details</button>
               </form>

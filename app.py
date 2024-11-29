@@ -761,14 +761,15 @@ def editMural(id):
 
     # Relate mural and submitted tags
     if 'tags' in request.form:
-        for tag in request.form.getlist('tags'):
-            tag_id = db.session.execute(
-                db.select(Tag.id)
-                    .where(Tag.name == tag)
-            ).scalar()
+        if "No Tags" not in request.form.getlist('tags'):
+            for tag in request.form.getlist('tags'):
+                tag_id = db.session.execute(
+                    db.select(Tag.id)
+                        .where(Tag.name == tag)
+                ).scalar()
 
-            rel = MuralTag(tag_id=tag_id, mural_id=m.id)
-            db.session.add(rel)
+                rel = MuralTag(tag_id=tag_id, mural_id=m.id)
+                db.session.add(rel)
 
     # Remove existing artist relationships
     # (If artists is not in the form submission, the multiselect was blank)
@@ -785,17 +786,17 @@ def editMural(id):
 
     m.active = True if 'active' in request.form else False
 
-    if m.notes is not None:
+    if m.notes != 'None':
         m.notes = request.form['notes']
-    if m.remarks is not None:
+    if m.remarks != 'None':
         m.remarks = request.form['remarks']
-    if m.year is not None:
+    if m.year != 'None':
         m.year = int(request.form['year'])
-    if m.location is not None:
+    if m.location != 'None':
         m.location = request.form['location']
-    if m.private_notes is not None:
+    if m.private_notes != 'None':
         m.private_notes = request.form['private_notes']
-    if m.spotify is not None:
+    if m.spotify != 'None':
         m.spotify = request.form["spotify"]
     db.session.commit()
     return ('', 204)
@@ -826,14 +827,12 @@ def editImage(id):
         db.select(Image).where(Image.id == id)
     ).scalar_one()
 
-    if image.caption is not None and request.form['caption'].strip() != '':
+    if request.form['caption'].strip() != '':
         image.caption = request.form["caption"]
-    if image.alttext is not None and request.form['alttext'].strip() != '':
+    if request.form['alttext'].strip() != '':
         image.alttext = request.form["alttext"]
-    if image.attribution is not None and request.form['attribution'].strip() != '':
+    if request.form['attribution'].strip() != '':
         image.attribution = request.form["attribution"]
-    if image.datecreated is not None and request.form['datecreated'].strip() != '':
-        image.datecreated = request.form["datecreated"]
     db.session.commit()
     return ('', 204)
 
@@ -927,7 +926,7 @@ Route to add new mural entry
 @app.route("/upload", methods=["POST"])
 @debug_only
 def upload():
-    artistKnown = True if request.form['artistknown'] else False
+    artistKnown = True if 'artistKnown' in request.form else False
     if not (request.form["year"].isdigit()):
         return render_template("404.html"), 404
 
