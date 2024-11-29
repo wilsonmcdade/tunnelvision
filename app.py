@@ -156,6 +156,7 @@ def mural_json(mural: Mural):
         db.select(Image)
             .join(ImageMuralRelation, Image.id == ImageMuralRelation.image_id)
             .where(ImageMuralRelation.mural_id == mural.id)
+            .order_by(Image.ordering)
     ).scalars()
     images = []
     thumbnail = None
