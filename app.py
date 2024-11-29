@@ -212,6 +212,15 @@ def artist_json(artist: Artist):
     }
 
 """
+Create a JSON object for a tag
+"""
+def tag_json(tag: Tag):
+    return {
+        "name": tag.name,
+        "description": tag.description
+    }
+
+"""
 Create a JSON object for an image
 """
 def image_json(image: Image):
@@ -220,6 +229,8 @@ def image_json(image: Image):
         "ordering": image.ordering,
         "caption": image.caption,
         "alttext": image.alttext,
+        "attribution": image.attribution,
+        "datecreated": image.datecreated,
         "id": image.id
     }
     if image.fullsizehash != None:
@@ -318,6 +329,14 @@ Get artist details
 def getArtistDetails(id):
     return artist_json(db.session.execute(
         db.select(Artist).where(Artist.id == id)
+    ).scalar_one())
+
+"""
+Get Tag details
+"""
+def getTagDetails(name):
+    return tag_json(db.session.execute(
+        db.select(Tag).where(Tag.name == name)
     ).scalar_one())
 
 """
@@ -454,7 +473,7 @@ def tags():
     if tag == None:
         return render_template("404.html"), 404
     else:
-        return render_template("filtered.html", pageTitle="Tag - {0}".format(tag), subHeading="Tagged", murals=getMuralsTagged(tag))
+        return render_template("filtered.html", pageTitle="Tag - {0}".format(tag), subHeading=getTagDetails(tag)['description'], murals=getMuralsTagged(tag))
 
 """
 Get next page of murals
@@ -647,7 +666,8 @@ def uploadImageResize(file, mural_id, count):
         img = Image(
             fullsizehash=fullsizehash,
             ordering=count,
-            imghash=file_hash
+            imghash=file_hash,
+            datecreated=datetime.now()
         )
         db.session.add(img)
         db.session.flush()

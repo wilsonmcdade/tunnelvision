@@ -2,8 +2,8 @@
 {% block dynamic_content %}
 
 <h1>{{ pageTitle }}: {{ subHeading["name"] }}</h1>
-{% if subHeading["notes"] != None %}
-<h3>{{ subHeading["notes"] }}</h3>
+{% if subHeading != None %}
+<h3 class="thin">{{ subHeading }}</h3>
 {% endif %}
 
 <p><a href="/catalog">Back to Catalog</a></p>
