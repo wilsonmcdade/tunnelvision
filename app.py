@@ -1,6 +1,6 @@
 import os
 import subprocess
-from flask import Flask, render_template, request, redirect, abort, url_for
+from flask import Flask, render_template, request, redirect, abort, url_for, send_file
 import psycopg2
 import logging
 from werkzeug.utils import secure_filename
@@ -16,6 +16,8 @@ from sqlalchemy import func, ForeignKey, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from s3 import get_bucket, get_file_s3, upload_file, remove_file, get_file_list, get_file
 from typing import Optional
+import shutil
+import pandas as pd
 import json_log_formatter
 
 class Base(DeclarativeBase):
@@ -341,6 +343,69 @@ def getTagDetails(name):
     ).scalar_one())
 
 """
+Exports database tables to CSV files
+Stores in provided directory
+"""
+def export_data(dir, public):
+    if public:
+        mural_select = db.select(Mural.id, Mural.title, Mural.notes, Mural.remarks, Mural.year, Mural.location, Mural.spotify)\
+            .order_by(Mural.id.asc())
+    else:
+        mural_select = db.select(Mural.id, Mural.title, Mural.private_notes, Mural.notes, Mural.remarks, Mural.year, Mural.location, Mural.spotify)\
+            .order_by(Mural.id.asc())
+        
+        feedback_select = db.select(Feedback).order_by(Feedback.feedback_id.asc())
+        feedback_df = pd.read_sql(feedback_select, db.engine)
+        feedback_df.to_csv(dir+"feedback.csv")
+        
+    murals_df = pd.read_sql(mural_select, db.engine)
+
+    murals_df['tags'] = murals_df.apply(lambda x: getTags(x['id']), axis=1)
+    murals_df['artists'] = murals_df.apply(lambda x: getArtists(x['id']), axis=1)
+
+    images_select = db.select(Image.id, Image.caption, Image.alttext, Image.attribution, Image.datecreated).where(Image.ordering != 0).order_by(Image.id.asc())
+
+    images_df = pd.read_sql(images_select, db.engine)
+
+    if not os.path.exists(dir):
+        os.makedirs(dir)
+
+    murals_df.to_csv(dir+"murals.csv")
+    images_df.to_csv(dir+"images.csv")
+
+"""
+Exports images to <path>/images
+"""
+def export_images(path):
+    murals = db.session.execute(
+        db.select(Mural)
+            .order_by(Mural.id.asc())
+    ).scalars()
+
+    for m in murals:
+        images = db.session.execute(
+            db.select(Image)
+                .join(ImageMuralRelation, ImageMuralRelation.image_id == Image.id)
+                .where(ImageMuralRelation.mural_id == m.id)
+                .filter(Image.ordering != 0)
+        ).scalars()
+
+        basepath = path + "images/" + str(m.id) + "/"
+
+        if not os.path.exists(basepath):
+            os.makedirs(basepath)
+
+        for i in images:
+            get_file(app.config['BUCKET_NAME'], i.fullsizehash, basepath + str(i.ordering) + ".jpg", app.config['S3_KEY'], app.config['S3_SECRET'])
+            
+
+"""
+Imports data export into database, S3
+"""
+def import_data(file):
+    return
+
+"""
 Get mural details
 """
 def getMural(id):
@@ -420,6 +485,16 @@ def getTags(mural_id=None):
             db.select(Tag.name)
                 .join(MuralTag, MuralTag.tag_id == Tag.id)
                 .where(MuralTag.mural_id == mural_id)
+        ).scalars())
+
+"""
+Get artist names for given mural
+"""
+def getArtists(mural_id):
+    return list(db.session.execute(
+            db.select(Artist.name)
+                .join(ArtistMuralRelation, Artist.id == ArtistMuralRelation.artist_id)
+                .where(ArtistMuralRelation.mural_id == mural_id)
         ).scalars())
 
 """
@@ -903,6 +978,24 @@ def deleteImage(id):
     db.session.commit()
 
     return ('', 204)
+
+"""
+Route to begin public export
+"""
+@app.route("/export", methods=["POST"])
+@debug_only
+def export():
+    public = bool(int(request.args.get("p")))
+    now = datetime.now()
+    dir_name = "export" + now.strftime("%d%m%Y")
+    basepath = "tmp/"
+
+    export_images(basepath+dir_name+"/")
+    export_data(basepath+dir_name+"/", public)
+
+    shutil.make_archive(basepath+dir_name, "zip", basepath+dir_name)
+
+    return send_file(basepath+dir_name+".zip")
 
 """
 Route to upload new image

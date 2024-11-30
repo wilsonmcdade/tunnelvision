@@ -2,6 +2,12 @@
 {% block dynamic_content %}
 
 <p>Home</p>
+<form action="/export?p=1" method="post">
+  <button type="submit" class="btn btn-primary">Public Export</button>
+</form>
+<form action="/export?p=0" method="post">
+  <button type="submit" class="btn btn-primary">Private Export</button>
+</form>
 <div class="accordion" id="accordionExample">
     <div class="accordion-item">
       <h2 class="accordion-header" id="headingOne">
