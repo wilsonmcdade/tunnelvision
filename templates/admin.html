@@ -8,6 +8,13 @@
 <form action="/export?p=0" method="post">
   <button type="submit" class="btn btn-primary">Private Export</button>
 </form>
+<div class="mb-3">
+  <form action="/import" method="post">
+    <label for="images" class="form-label">Import</label>
+    <input type="file" class="form-control" id="fileimport" name="fileimport">
+    <button type="submit" class="btn btn-primary" disabled>Submit</button>
+  </form>
+</div>
 <div class="accordion" id="accordionExample">
     <div class="accordion-item">
       <h2 class="accordion-header" id="headingOne">

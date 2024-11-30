@@ -980,11 +980,11 @@ def deleteImage(id):
     return ('', 204)
 
 """
-Route to begin public export
+Route to perform public export
 """
 @app.route("/export", methods=["POST"])
 @debug_only
-def export():
+def export_data():
     public = bool(int(request.args.get("p")))
     now = datetime.now()
     dir_name = "export" + now.strftime("%d%m%Y")
@@ -996,6 +996,14 @@ def export():
     shutil.make_archive(basepath+dir_name, "zip", basepath+dir_name)
 
     return send_file(basepath+dir_name+".zip")
+
+"""
+Route to perform data import
+"""
+@app.route("/import", methods=["POST"])
+@debug_only
+def import_data():
+    return ('', 501)
 
 """
 Route to upload new image
