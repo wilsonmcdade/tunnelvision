@@ -438,26 +438,14 @@ def checkArtistExists(id):
     if not id.isdigit():
         return False
 
-    integer_pattern = r'^[+-]?\d+$'
-
-    # Use re.match to check if the variable matches the integer pattern
-    if not re.match(integer_pattern, str(id)):
-        return False
-
-    return True
+    return db.session.execute(db.select(Artist).where(Artist.id == id)).scalar() != None
 
 def checkMuralExists(id):
     # Check id is not bad
     if not id.isdigit():
         return False
-
-    integer_pattern = r'^[+-]?\d+$'
-
-    # Use re.match to check if the variable matches the integer pattern
-    if not re.match(integer_pattern, str(id)):
-        return False
-
-    return True
+    
+    return db.session.execute(db.select(Mural).where(Mural.id == id)).scalar() != None
 
 """
 Get all murals with given tag
@@ -601,9 +589,9 @@ def year(year):
 """
 Generic error handler
 """
-#@app.errorhandler(HTTPException)
-#def not_found(e):
-#    return render_template("404.html"), 404
+@app.errorhandler(HTTPException)
+def not_found(e):
+    return render_template("404.html"), 404
 
 ########################
 #
@@ -862,18 +850,20 @@ def editMural(id):
 
     m.active = True if 'active' in request.form else False
 
-    if m.notes != 'None':
+    if request.form['notes'] != 'None':
         m.notes = request.form['notes']
-    if m.remarks != 'None':
+    if request.form['remarks'] != 'None':
         m.remarks = request.form['remarks']
-    if m.year != 'None':
+    if request.form['year'] != 'None':
         m.year = int(request.form['year'])
-    if m.location != 'None':
+    if request.form['location'] != 'None':
         m.location = request.form['location']
-    if m.private_notes != 'None':
+    if request.form['private_notes'] != 'None':
         m.private_notes = request.form['private_notes']
-    if m.spotify != 'None':
+    if request.form['spotify'] != 'None':
         m.spotify = request.form["spotify"]
+    if request.form['nextmuralid'] != 'None':
+        m.nextmuralid = request.form['nextmuralid']
     db.session.commit()
     return ('', 204)
 

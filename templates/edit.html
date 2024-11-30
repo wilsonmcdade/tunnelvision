@@ -151,9 +151,14 @@
                     <input value="{{ muralDetails['location'] }}" type="text" class="form-control" id="location" name="location">
                 </div>
                 <div class="mb-3">
-                  <label for="location" class="form-label">Spotify</label>
+                  <label for="spotify" class="form-label">Spotify</label>
                   <p class="thin">Add the song ID for a related song on Spotify. Copy the "song link" and paste the code after the "track/" portion of the URL. Also trim the "?si=xxx" portion of the url.</p>
                   <input value="{{ muralDetails['spotify'] }}" type="text" class="form-control" id="spotify" name="spotify">
+                </div>
+                <div class="mb-3">
+                  <label for="nextmuralid" class="form-label">Next Mural</label>
+                  <p class="thin">The ID of the next mural in sequence</p>
+                  <input value="{{ muralDetails['nextmuralid'] }}" type="text" class="form-control" id="nextmuralid" name="nextmuralid">
                 </div>
                 <h1>Private Information</h1>
                 <div class="mb-3">
