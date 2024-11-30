@@ -56,13 +56,11 @@
                     <div class="carousel-item text-center">
                     {% endif %}
                         <img class="main-img" alt="{{ muralDetails['images'][loop.index-1]['alttext'] }}" src="{{ muralDetails['images'][loop.index-1]['imgurl'] }}">
-                        <div class="carousel-caption d-none d-md-block ">
-                            {% if muralDetails['images'][loop.index-1]['caption'] != None %}
-                            <pre style="font-family:inherit;font-size:inherit" class="banner-value no-a-styles">{{ muralDetails['images'][loop.index-1]['caption'] }}</pre>
-                            {% endif %}
-                            {% if muralDetails['images'][loop.index-1]['fullsizeimage']%}
-                            <p class="banner-value"><a class="no-a-styles" href="{{ muralDetails['images'][loop.index-1]['fullsizeimage'] }}">Full Size Image</a></p>
-                            {% endif %}
+                        <div class="carousel-caption d-none d-md-block banner-value">
+                            {% if muralDetails['images'][loop.index-1]['caption'] != None %}<p class="no-a-styles">
+{{ muralDetails['images'][loop.index-1]['caption'] }}</p>{% endif %}
+                            <pre style="font-family:inherit;font-size:inherit">{% if muralDetails['images'][loop.index-1]['attribution'] != None %}Photo: {{ muralDetails['images'][loop.index-1]['attribution']}}{% if muralDetails['images'][loop.index-1]['datecreated'] != None %}, {{ muralDetails['images'][loop.index-1]['datecreated'].strftime("%B %d, %Y") }}{% endif %}{% endif %}{% if muralDetails['images'][loop.index-1]['fullsizeimage']%}<a class="no-a-styles" href="{{ muralDetails['images'][loop.index-1]['fullsizeimage'] }}">
+View Full Size Image</a>{% endif %}</pre>
                         </div>
                     </div>
                     {% endfor %}
