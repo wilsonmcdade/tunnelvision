@@ -211,7 +211,8 @@ Create a JSON object for an artist
 def artist_json(artist: Artist):
     return {
         "id": artist.id,
-        "name": artist.name
+        "name": artist.name,
+        "notes": artist.notes
     }
 
 """
@@ -346,7 +347,7 @@ def getTagDetails(name):
 Exports database tables to CSV files
 Stores in provided directory
 """
-def export_data(dir, public):
+def export_database(dir, public):
     if public:
         mural_select = db.select(Mural.id, Mural.title, Mural.notes, Mural.remarks, Mural.year, Mural.location, Mural.spotify)\
             .order_by(Mural.id.asc())
@@ -568,7 +569,7 @@ Page for specific artist
 @app.route("/artist/<id>")
 def artist(id):
     if (checkArtistExists(id)):
-        return render_template("filtered.html", pageTitle="Artist Search", subHeading=getArtistDetails(id), murals=getAllMuralsFromArtist(id))
+        return render_template("filtered.html", pageTitle="Artist: {0}".format(getArtistDetails(id)['name']), subHeading=getArtistDetails(id)['notes'], murals=getAllMuralsFromArtist(id))
     else:
         return render_template("404.html"), 404
 
@@ -654,6 +655,24 @@ def deleteArtistGivenID(id):
     db.session.execute(
         db.delete(Artist)
             .where(Artist.id == id)
+    )
+    db.session.commit()
+
+"""
+Delete tag and all relations from DB
+"""
+def deleteTagGivenName(name):
+    t = db.session.execute(
+        db.select(Tag)
+            .where(Tag.name == name)
+    ).scalar_one()
+    db.session.execute(
+        db.delete(MuralTag)
+            .where(MuralTag.tag_id == t.id)
+    )
+    db.session.execute(
+        db.delete(Tag)
+            .where(Tag.id == t.id)
     )
     db.session.commit()
 
@@ -757,7 +776,7 @@ Route to the admin panel
 @app.route("/admin")
 @debug_only
 def admin():
-    return render_template("admin.html", murals=getAllMurals(), artists=getAllArtists())
+    return render_template("admin.html", tags=getAllTags(), murals=getAllMurals(), artists=getAllArtists())
 
 
 ########################
@@ -793,6 +812,12 @@ def deleteArtist(id):
         return redirect("/admin")
     else:
         return render_template("404.html"), 404
+    
+@app.route('/deleteTag/<name>', methods=['POST'])
+@debug_only
+def deleteTag(name):
+    deleteTagGivenName(name)
+    return redirect("/admin")
 
 """
 Route to delete mural entry
@@ -867,6 +892,31 @@ def editMural(id):
     db.session.commit()
     return ('', 204)
 
+"""
+Route to edit tag description
+"""
+@app.route('/editTag/<name>', methods=["POST"])
+@debug_only
+def edit_tag(name):
+    t = db.session.execute(
+        db.select(Tag).where(Tag.name == name)
+    ).scalar_one()
+    t.description = request.form['description']
+    db.session.commit()
+    return ('', 204)
+
+"""
+Route to edit Artist notes
+"""
+@app.route('/editArtist/<id>', methods=["POST"])
+@debug_only
+def edit_artist(id):
+    a = db.session.execute(
+        db.select(Artist).where(Artist.id == id)
+    ).scalar_one()
+    a.notes = request.form['notes']
+    db.session.commit()
+    return ('', 204)
 
 """
 Route to edit mural title
@@ -981,7 +1031,7 @@ def export_data():
     basepath = "tmp/"
 
     export_images(basepath+dir_name+"/")
-    export_data(basepath+dir_name+"/", public)
+    export_database(basepath+dir_name+"/", public)
 
     shutil.make_archive(basepath+dir_name, "zip", basepath+dir_name)
 
@@ -994,6 +1044,38 @@ Route to perform data import
 @debug_only
 def import_data():
     return ('', 501)
+
+"""
+Add artist with blank notes
+"""
+@app.route("/addArtist", methods=["POST"])
+@debug_only
+def add_artist():
+    artist = Artist(
+        name=request.form['name'],
+        notes=""
+    )
+
+    db.session.add(artist)
+    db.session.commit()
+
+    return redirect("/admin")
+
+"""
+Add tag with blank description
+"""
+@app.route("/addTag", methods=["POST"])
+@debug_only
+def add_tag():
+    tag = Tag(
+        name=request.form['name'],
+        description=""
+    )
+
+    db.session.add(tag)
+    db.session.commit()
+
+    return redirect("/admin")
 
 """
 Route to upload new image
