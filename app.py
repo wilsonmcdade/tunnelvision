@@ -703,7 +703,12 @@ def deleteMuralEntry(id):
         db.delete(Feedback)
             .where(Feedback.mural_id == id)
     )
-    db.session.query(Mural).filter_by(nextmuralid = id).update({'nextmuralid' : None})
+
+    m = db.session.execute(
+        db.select(Mural).where(Mural.id == id)
+    ).scalar_one()
+
+    db.session.query(Mural).filter_by(nextmuralid = id).update({'nextmuralid' : m.nextmuralid})
     db.session.execute(
         db.delete(Mural)
             .where(Mural.id == id)
