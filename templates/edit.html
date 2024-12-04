@@ -39,12 +39,12 @@
             <form action="/editimage/{{ muralDetails['images'][loop.index-1]['id'] }}" method="post">
                 <div class="mb-3">
                     <label for="caption" class="form-label">Caption</label>
-                    <p class="thin">Write a caption for this image. This should not be a description, as that is covered by the alt text and description fields for the mural. Also include attribution here.</p>
+                    <p class="thin">Write a caption for this image. Use the caption to put the piece in the larger context. You might consider the space it occupies, the content of the piece, the cultural references, and the political environment of the time.</p>
                     <textarea type="text" class="form-control" id="caption" name="caption">{{ muralDetails['images'][loop.index-1]['caption'] }}</textarea>
                 </div>
                 <div class="mb-3">
                     <label for="alttext" class="form-label">Alt Text</label>
-                    <p class="thin">Write a descriptive caption of this image in particular. Refer to <a href="https://developers.google.com/tech-writing/accessibility/self-study/write-alt-text#write-useful-text">this article</a> on writing good alt text.</p>
+                    <p class="thin">Write a description of this image in particular. Refer to <a href="https://developers.google.com/tech-writing/accessibility/self-study/write-alt-text#write-useful-text">this article</a> on writing good alt text.</p>
                     <input value="{{ muralDetails['images'][loop.index-1]['alttext'] }}" type="text" class="form-control" id="alttext" name="alttext">
                 </div>
                 <div class="mb-3">
@@ -137,7 +137,7 @@
                 </div>
                 <div class="mb-3">
                     <label for="remarks" class="form-label">Remarks</label>
-                    <p class="thin">Use the remarks field to add any additional details that could be useful about a piece. These details could be sourced from suggestions, common knowledge, or other casual sources. Please end your remarks entry with your name and the date when you wrote it.</p>
+                    <p class="thin">Use the remarks field to add any additional details that could be useful about a piece. These details could be sourced from suggestions, common knowledge, or other casual sources. Please end your remarks entry with your name/initials and the date when you wrote it.</p>
                     <textarea type="text" class="form-control" id="remarks" name="remarks">{{ muralDetails['remarks'] }}</textarea>
                 </div>
                 <div class="mb-3">
