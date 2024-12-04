@@ -1,12 +1,13 @@
 {% extends "header.html" %}
 {% block dynamic_content %}
 
+<p style="color:inherit"><a href="/catalog">< Back to Catalog</a></p>
+
 <h1>{{ pageTitle }}: {{ subHeading["name"] }}</h1>
-{% if subHeading["notes"] != None %}
-<h3>{{ subHeading["notes"] }}</h3>
+{% if subHeading != None %}
+<h4 class="thin">{{ subHeading }}</h4>
 {% endif %}
 
-<p><a href="/catalog">Back to Catalog</a></p>
 
 <div class="container-fluid">
     <div class="row text-center">

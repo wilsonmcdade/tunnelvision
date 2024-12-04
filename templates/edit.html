@@ -1,20 +1,60 @@
 {% extends "header.html" %}
 {% block dynamic_content %}
+ 
+  <!-- Modal -->
+  <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="staticBackdropLabel">Warning! You are about to delete an entry!</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+            <p>Deleting this entry will delete all associated media, including imagery, feedback, artist, and all details of the piece.</p>
+            <p><b>This cannot be undone.</b></p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+          <form action="/delete/{{ muralDetails['id'] }}" method="post">
+          <button type="submit" class="btn btn-danger">Delete Mural</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  
 
 <div class="container">
-    <h1>{{ muralDetails["title"] }} </h1>
+    <form action="/edittitle/{{ muralDetails['id'] }}" method="post">
+            <input value="{{ muralDetails['title'] }}" type="text" class="form-control" id="title" name="title" required>
+            <button type="submit" class="btn btn-primary">Edit Title</button>
+    </form>
     <div class="row">
         <div class="col-8 mb-3">
             {% for image in muralDetails["images"]: %}
             <img style="width:100%;" src="{{ muralDetails['images'][loop.index-1]['imgurl'] }}">
+            <form action="/makethumbnail?muralid={{ muralDetails['id'] }}&imageid={{ muralDetails['images'][loop.index-1]['id'] }}" method="post">
+                <button type="submit" class="btn btn-primary">Make this the thumbnail</button>
+            </form>
             <form action="/editimage/{{ muralDetails['images'][loop.index-1]['id'] }}" method="post">
                 <div class="mb-3">
                     <label for="caption" class="form-label">Caption</label>
-                    <input value="{{ muralDetails['images'][loop.index-1]['caption'] }}" type="text" class="form-control" id="caption" name="caption" required>
+                    <p class="thin">Write a caption for this image. Use the caption to put the piece in the larger context. You might consider the space it occupies, the content of the piece, the cultural references, and the political environment of the time.</p>
+                    <textarea type="text" class="form-control" id="caption" name="caption">{{ muralDetails['images'][loop.index-1]['caption'] }}</textarea>
                 </div>
                 <div class="mb-3">
                     <label for="alttext" class="form-label">Alt Text</label>
-                    <input value="{{ muralDetails['images'][loop.index-1]['alttext'] }}" type="text" class="form-control" id="alttext" name="alttext" required>
+                    <p class="thin">Write a description of this image in particular. Refer to <a href="https://developers.google.com/tech-writing/accessibility/self-study/write-alt-text#write-useful-text">this article</a> on writing good alt text.</p>
+                    <input value="{{ muralDetails['images'][loop.index-1]['alttext'] }}" type="text" class="form-control" id="alttext" name="alttext">
+                </div>
+                <div class="mb-3">
+                    <label for="attribution" class="form-label">Attribution</label>
+                    <p class="thin">The first and last name of the photographer.</p>
+                    <input value="{{ muralDetails['images'][loop.index-1]['attribution'] }}" type="text" class="form-control" id="attribution" name="attribution">
+                </div>
+                <div class="mb-3">
+                    <h6>Date Taken</h6>
+                    <p>{{ muralDetails['images'][loop.index-1]['datecreated'] }}</p>
                 </div>
                 <button type="submit" class="btn btn-primary">Edit Details</button>
                 </form>
@@ -44,28 +84,110 @@
                     {% endif %}
                 </div>
             </div>
-            <input type="checkbox" {% if muralDetails['active'] %} checked {% endif %} name="active">
-            <label for="active">Active</label>
-            <h3>Notes:</h3>
-            <p>{{ muralDetails["notes"] }}</p>
-            <h3>Year:</h3>
-            <p><a href="/year/{{ muralDetails['year'] }}">{{ muralDetails["year"] }}</a></p>
-            <h3>Location:</h3>
-            <p>{{ muralDetails["location"] }} </p>
-            
-            {% if muralDetails["artists"]|length > 0: %}
-            <h3>Artists:</h3>
-            <ul>
-            {% for artist in muralDetails["artists"]: %}
-            <li><a href="/artist/{{ artist['id'] }}">{{artist["name"]}}</a></li>
-            {% endfor %}
-            </ul>
-            {% endif %}
-            <form action="/delete/{{ muralDetails['id'] }}" method="post">
-            <button type="submit" class="btn btn-danger">Delete Mural</button>
-            </form>
-        </div>
-    </div>
+            <h1>Preview:</h1>
+            <div class="card col-lg-6 text-center">
+              
+              
+
+              <div>
+                <a style="text-decoration: none; color:inherit" href="/murals/{{ muralDetails['id'] }}">
+                <img class="card-img-top" src="{{ muralDetails['thumbnail'] }}">
+                    {% if muralDetails['tags']|length > 0 %}
+                    <div class="card-body">
+                    <p style="margin-bottom: 2px;">{{ muralDetails['title'] }}</p>
+                    <p style="margin-bottom: 4px">({% if muralDetails["year"] != 0 %}{{ muralDetails["year"] }}{% else %}Unknown{% endif %})</p>
+                    {% for tag in muralDetails['tags'] %}
+                    <p style="margin-bottom: 2px" class="chip small">{{ tag }}</p>
+                    {% endfor %}
+                    {% else %}
+                    <div class="card-body">
+                    <p style="margin-bottom: 4px">{{ muralDetails['title'] }}</p>
+                    <p>({% if muralDetails["year"] != 0 %}{{ muralDetails["year"] }}{% else %}Unknown{% endif %})</p>
+                    {% endif %}
+                </div>
+                </div>
+            </a>
+              </div>
+              <h1>General Information</h1>
+              <form action="/editmural/{{ muralDetails['id'] }}" method="post">
+                <label for="tags">Tags:</label>
+                <p class="thin">Create more tags on the <a href="/admin">Admin Panel</a>.</p>
+                <select name="tags" class="form-select form-select-sm" multiple aria-label="multiple select">
+                  <option {{ 'selected' if muralDetails['tags']|length == 0 else '' }} value="No Tags">No Tags</option>
+                  {% for t in tags %}
+                  <option {{ 'selected' if t.name in muralDetails['tags'] else '' }} value="{{ t.name }}">{{ t.name }}</option>
+                  {% endfor %}
+                </select>
+                <label for="artists">Artists:</label>
+                <p class="thin">Create more artists on the <a href="/admin">Admin Panel</a>.</p>
+                <select name="artists" class="form-select form-select-sm" multiple aria-label="multiple select">
+                  {% for a in artists %}
+                  <option {{ 'selected' if a.id in muralDetails['artists']|map(attribute='id') else '' }} value="{{ a.id }}">{{ a.name }}</option>
+                  {% endfor %}
+                </select>
+                <div class="mb-3">
+                    <label for="active" class="form-label">Active</label>
+                    <input {{ muralDetails['active'] }} type="checkbox" id="active" name="active">
+                    <p class="thin">Should this mural be on the catalog? Inactive murals can still be searched.</p>
+                </div>
+                <div class="mb-3">
+                    <label for="notes" class="form-label">Description</label>
+                    <p class="thin">Visually describe this piece. Please be as descriptive as possible and use terms that could be aid in the discoverability of the piece in search engines.</p>
+                    <textarea type="text" class="form-control" id="notes" name="notes">{{ muralDetails['notes'] }}</textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="remarks" class="form-label">Remarks</label>
+                    <p class="thin">Use the remarks field to add any additional details that could be useful about a piece. These details could be sourced from suggestions, common knowledge, or other casual sources. Please end your remarks entry with your name/initials and the date when you wrote it.</p>
+                    <textarea type="text" class="form-control" id="remarks" name="remarks">{{ muralDetails['remarks'] }}</textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="year" class="form-label">Year</label>
+                    <p class="thin">The approximate year this piece was painted. If painted over two years, use the lowest year. If the year is unknown, enter 0.</p>
+                    <input value="{{ muralDetails['year'] }}" type="text" class="form-control" id="year" name="year" required>
+                </div>
+                <div class="mb-3">
+                    <label for="location" class="form-label">Location</label>
+                    <p class="thin">Describe the location of the mural. You don't have to have GPS coordinates, just say what building it's under, or if it's near a landmark like Corner Store.</p>
+                    <input value="{{ muralDetails['location'] }}" type="text" class="form-control" id="location" name="location">
+                </div>
+                <div class="mb-3">
+                  <label for="spotify" class="form-label">Spotify</label>
+                  <p class="thin">Add the song ID for a related song on Spotify. Copy the "song link" and paste the code after the "track/" portion of the URL. Also trim the "?si=xxx" portion of the url.</p>
+                  <input value="{{ muralDetails['spotify'] }}" type="text" class="form-control" id="spotify" name="spotify">
+                </div>
+                <div class="mb-3">
+                  <label for="nextmuralid" class="form-label">Next Mural</label>
+                  <p class="thin">The ID of the next mural in sequence</p>
+                  <input value="{{ muralDetails['nextmuralid'] }}" type="text" class="form-control" id="nextmuralid" name="nextmuralid">
+                </div>
+                <h1>Private Information</h1>
+                <div class="mb-3">
+                    <label for="location" class="form-label">Private Notes</label>
+                    <textarea type="text" class="form-control" id="private_notes" name="private_notes">{{ muralDetails['private_notes'] }}</textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Edit Details</button>
+              </form>
+
+              {% if muralFeedback|length > 0 %}
+              <h1>Feedback:</h1>
+              {% for feedback in muralFeedback: %}
+              <div class="list-group">
+                <a class="list-group-item">
+                  <div class="d-flex w-100 justify-content-between">
+                    <p class="mb-1"><b>Notes:</b> {{ muralFeedback[loop.index-1]['notes'] }}</p>
+                    <p class="text-muted" title="{{ muralFeedback[loop.index-1]['exacttime'] }}">{{ muralFeedback[loop.index-1]['approxtime'] }}</p>
+                  </div>
+                  <small><b>Contact:</b> {{ muralFeedback[loop.index-1]['contact'] }}</small>
+                </a>
+              </div>
+              {% endfor %}
+              {% endif %}
+
+              <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
+                Delete Mural
+              </button>
+            </div>
+          </div>
     <script>
         document.addEventListener('keydown', function(event) {
           switch(event.key) {
@@ -81,7 +203,7 @@
             {% endif %}
           }
         });
-        </script>
+    </script>
 </div>
 
 {% endblock %}

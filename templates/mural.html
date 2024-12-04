@@ -56,13 +56,11 @@
                     <div class="carousel-item text-center">
                     {% endif %}
                         <img class="main-img" alt="{{ muralDetails['images'][loop.index-1]['alttext'] }}" src="{{ muralDetails['images'][loop.index-1]['imgurl'] }}">
-                        <div class="carousel-caption d-none d-md-block ">
-                            {% if muralDetails['images'][loop.index-1]['caption'] != None %}
-                            <p class="banner-value no-a-styles">{{ muralDetails['images'][loop.index-1]['caption'] }}</p>
-                            {% endif %}
-                            {% if muralDetails['images'][loop.index-1]['fullsizeimage']%}
-                            <p class="banner-value"><a class="no-a-styles" href="{{ muralDetails['images'][loop.index-1]['fullsizeimage'] }}">Full Size Image</a></p>
-                            {% endif %}
+                        <div class="carousel-caption d-none d-md-block banner-value">
+                            {% if muralDetails['images'][loop.index-1]['caption'] != None %}<p class="no-a-styles">
+{{ muralDetails['images'][loop.index-1]['caption'] }}</p>{% endif %}
+                            <pre style="font-family:inherit;font-size:inherit">{% if muralDetails['images'][loop.index-1]['attribution'] != None %}Photo: {{ muralDetails['images'][loop.index-1]['attribution']}}{% if muralDetails['images'][loop.index-1]['datecreated'] != None %}, {{ muralDetails['images'][loop.index-1]['datecreated'].strftime("%B %d, %Y") }}{% endif %}{% endif %}{% if muralDetails['images'][loop.index-1]['fullsizeimage']%}<a class="no-a-styles" href="{{ muralDetails['images'][loop.index-1]['fullsizeimage'] }}">
+View Full Size Image</a>{% endif %}</pre>
                         </div>
                     </div>
                     {% endfor %}
@@ -82,8 +80,8 @@
         </div>
         <div class="col-lg-4 col-md-12">
             {% if muralDetails["notes"] != '' %}
-            <h3>Notes:</h3>
-            <p>{{ muralDetails["notes"] }} </p>
+            <h3>Description:</h3>
+            <pre style="font-family:inherit;font-size:inherit">{{ muralDetails["notes"] }} </pre>
             {% endif %}
             <h3>Year:</h3>
             <p><a href="/year/{{ muralDetails['year'] }}">{% if muralDetails["year"] != 0 %}{{ muralDetails["year"] }}{% else %}Unknown{% endif %}</a></p>
@@ -94,9 +92,9 @@
             <h3>Location:</h3>
             <p>{{ muralDetails["location"] }} </p>
 
-            {% if tags|length > 0 %}
+            {% if muralDetails['tags']|length > 0 %}
             <h3>Tags:</h3>
-            {% for tag in tags: %}
+            {% for tag in muralDetails['tags']: %}
             <a href="/tags?t={{ tag }}"><p class="chip">{{ tag }}</p></a>
             {% endfor %}
             {% endif %}
@@ -109,12 +107,31 @@
             {% endfor %}
             </ul>
             {% endif %}
+            
+            {% if muralDetails["remarks"] != '' %}
+            <div class="accordion" id="remarkdropdown">
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="remarkheading" title="Remarks can provide additional information about a piece, including details sourced from suggestions, conversations, and other casual sources.">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#remarkcollapse" aria-controls="remarkcollapse">
+                        Remarks
+                        </button>
+                    </h2>
+                    <div id="remarkcollapse" class="accordion-collapse collapse" aria-labelledby="remarkheading" data-bs-parent="#remarkdropdown">
+                        <div class="accordion-body">
+                            <div class="container">
+                                <pre style="font-family:inherit;font-size:inherit">{{ muralDetails['remarks'] }}</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
 
             <div class="accordion" id="accordionExample">
                 <div class="accordion-item">
                 <h2 class="accordion-header" id="headingOne">
-                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-controls="collapseOne">
-                    Suggestion?
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-controls="collapseOne">
+                    Suggestion? Feedback?
                     </button>
                 </h2>
                     <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
@@ -122,8 +139,12 @@
                             <div class="container">
                                 <form action="/suggestion" method="post" enctype="multipart/form-data">
                                     <div class="mb-3">
-                                        <label for="notes" class="form-label">Notes</label>
-                                        <input type="text" class="form-control" id="notes" name="notes" required>
+                                        <label for="notes" class="form-label"><b>Notes</b></label>
+                                        <p class="thin">What could be improved with this mural listing?</p>
+                                        <input type="text" class="form-control" style="margin-bottom: 10px; margin-top: -10px;" id="notes" name="notes" required>
+                                        <label for="notes" class="form-label"><b>Your Contact</b></label>
+                                        <p class="thin">How can we reach you to follow up?</p>
+                                        <input type="text" class="form-control" id="contact" name="contact">
                                         <input type="text" class="visually-hidden" id="muralid" name="muralid" value="{{ muralDetails['id'] }}">
                                     </div>
                                 </div>
@@ -134,14 +155,13 @@
                     </div>
                 </div>
             </div>
-        <div class="row">
-            <div class="col-7">
+        <div class="row text-center">
+            <div class="col-6">
                 {% if muralDetails['prevmuralid'] != None: %}
                 <a class="btn btn-primary" role="button" href="{{ muralDetails['prevmuralid'] }}">Prev</a>
                 {% endif %}
             </div>
-            <div class="col-5">
-
+            <div class="col-6">
                 {% if muralDetails['nextmuralid'] != None: %}
                 <a class="btn btn-primary" role="button" href="{{ muralDetails['nextmuralid'] }}">Next</a>
                 {% endif %}

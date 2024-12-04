@@ -6,11 +6,20 @@
     hx-swap="afterend"
 {% endif %}>
     <div>
-        <a style="text-decoration: none;" href="/murals/{{ mural['id'] }}">
+        <a style="text-decoration: none; color:inherit" href="/murals/{{ mural['id'] }}">
         <img class="card-img-top" src="{{ mural['thumbnail'] }}">
-        <div class="card-body">
-            <p>{{ mural['title'] }}</p>
+            {% if mural['tags']|length > 0 %}
+            <div class="card-body">
+            <p style="margin-bottom: 2px;">{{ mural['title'] }}</p>
+            <p style="margin-bottom: 4px">({% if mural["year"] != 0 %}{{ mural["year"] }}{% else %}Unknown{% endif %})</p>
+            {% for tag in mural['tags'] %}
+            <p style="margin-bottom: 2px" class="chip small">{{ tag }}</p>
+            {% endfor %}
+            {% else %}
+            <div class="card-body">
+            <p style="margin-bottom: 4px">{{ mural['title'] }}</p>
             <p>({% if mural["year"] != 0 %}{{ mural["year"] }}{% else %}Unknown{% endif %})</p>
+            {% endif %}
         </div>
         </div>
     </a>
@@ -48,6 +57,10 @@
             .navbar-collapse {
                 flex-grow: 0 !important;
             }
+
+            .thin {
+                font-weight: 300;
+            }
             
             .chip {
                 display: inline-block;
@@ -57,6 +70,14 @@
                 line-height: 50px;
                 border-radius: 25px;
                 background-color: #f1f1f1;
+            }
+            
+            .chip.small {
+                padding: 0 15px;
+                height: 30px;
+                font-size: 9px;
+                line-height: 30px;
+                border-radius: 15px;
             }
 
             .navbar-brand {

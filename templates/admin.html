@@ -1,7 +1,32 @@
 {% extends "header.html" %}
 {% block dynamic_content %}
 
-<p>Home</p>
+<p>Admin Panel</p>
+<div class="row">
+  <div class="col-3">
+    <form action="/export?p=1" method="post">
+      <button type="submit" class="btn btn-primary">Public Export</button>
+    </form>
+  </div>
+  <div class="col-3">
+    <form action="/export?p=0" method="post">
+      <button type="submit" class="btn btn-primary">Private Export</button>
+    </form>
+  </div>
+  <div class="col-3">
+    <div class="mb-3">
+      <form action="/import" method="post">
+        <!-- <input type="file" class="form-control" id="fileimport" name="fileimport"> -->
+        <button type="submit" class="btn btn-primary" disabled>Import</button>
+      </form>
+    </div>
+  </div>
+  <div class="col-3">
+    <form action="/relinkhighres" method="post">
+      <button type="submit" class="btn btn-primary">Relink High Res</button>
+    </form>
+  </div>
+</div>
 <div class="accordion" id="accordionExample">
     <div class="accordion-item">
       <h2 class="accordion-header" id="headingOne">
@@ -87,18 +112,74 @@
         </h2> 
         <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#accordionExample">
           <div class="accordion-body">
-            <div class="container text-center">
+            <div class="container">
               <h1>{{ pageTitle }}</h1>
                 <ul class="list-group list-group">
+                  <form action="/addArtist" method="post" enctype="multipart/form-data">
+                  <li class="list-group-item d-flex justify-content-between align-items-start">
+                    <div class="mb-3">
+                      <label for="name" class="form-label">Name</label>
+                      <input type="text" class="form-control" id="name" name="name" required>
+                  </div>
+                  <button type="submit" class="btn btn-primary">Submit</button>
+                  </li>
+                  </form>
                   {% for artist in artists: %}
                     <li class="list-group-item d-flex justify-content-between align-items-start">
                       <div class="ms-2 me-auto">
                         <div>Name: <b>{{ artist["name"] }}</b></div>
-                        {% if artist["notes"] != None %}
-                        <p>Notes: <b>{{ artist["notes"] }}</b></p>
-                        {% endif %}
+                        <form action="/editArtist/{{ artist['id'] }}" method="post" enctype="multipart/form-data">
+                          <div class="mb-3">
+                            <label for="notes" class="form-label">Notes</label>
+                            <input value="{{ artist['notes'] }}" type="text" class="form-control" id="notes" name="notes" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Edit Notes</button>
+                        </form>
                       </div>
                       <form action="/deleteArtist/{{ artist['id'] }}" method="post" enctype="multipart/form-data">
+                        <button type="submit" class="badge bg-danger rounded-pill">X</button>
+                      </form>
+                    </li>
+                  {% endfor %}
+                </ul>
+              </div>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingFour">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
+            Manage Tags
+          </button>
+        </h2> 
+        <div id="collapseFour" class="accordion-collapse collapse" aria-labelledby="headingFour" data-bs-parent="#accordionExample">
+          <div class="accordion-body">
+            <div class="container">
+                <ul class="list-group list-group">
+                  <form action="/addTag" method="post" enctype="multipart/form-data">
+                  <li class="list-group-item d-flex justify-content-between align-items-start">
+                    <div class="mb-3">
+                      <label for="name" class="form-label">Name</label>
+                      <input type="text" class="form-control" id="name" name="name" required>
+                  </div>
+                  <button type="submit" class="btn btn-primary">Submit</button>
+                  </li>
+                  </form>
+                  {% for tag in tags: %}
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                      <div class="ms-2 me-auto">
+                        <div>Name: <b>{{ tag["name"] }}</b></div>
+
+                        
+                        <form action="/editTag/{{ tag['name'] }}" method="post" enctype="multipart/form-data">
+                          <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <input value="{{ tag['description'] }}" type="text" class="form-control" id="description" name="description" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Edit Description</button>
+                        </form>
+                      </div>
+                      <form action="/deleteTag/{{ tag['name'] }}" method="post" enctype="multipart/form-data">
                         <button type="submit" class="badge bg-danger rounded-pill">X</button>
                       </form>
                     </li>

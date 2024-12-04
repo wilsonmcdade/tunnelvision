@@ -1,6 +1,6 @@
 import os
 import subprocess
-from flask import Flask, render_template, request, redirect, abort, url_for
+from flask import Flask, render_template, request, redirect, abort, url_for, send_file
 import psycopg2
 import logging
 from werkzeug.utils import secure_filename
@@ -14,8 +14,10 @@ from datetime import datetime, timezone
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func, ForeignKey, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from s3 import get_bucket, get_file_s3, upload_file, remove_file, get_file_list
+from s3 import get_bucket, get_file_s3, upload_file, remove_file, get_file_list, get_file
 from typing import Optional
+import shutil
+import pandas as pd
 import json_log_formatter
 
 class Base(DeclarativeBase):
@@ -26,7 +28,9 @@ class Mural(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str]
     artistknown: Mapped[bool]
+    remarks: Mapped[str]
     notes: Mapped[str]
+    private_notes: Mapped[str]
     year: Mapped[int]
     location: Mapped[str]
     nextmuralid: Mapped[Optional[int]] = mapped_column(ForeignKey("murals.id"))
@@ -47,6 +51,8 @@ class Image(Base):
     alttext: Mapped[str]
     ordering: Mapped[int]
     imghash: Mapped[str]
+    attribution: Mapped[str]
+    datecreated: Mapped[datetime]
     fullsizehash: Mapped[Optional[str]]
 
 class Tag(Base):
@@ -80,6 +86,7 @@ class Feedback(Base):
     __tablename__ = "feedback"
     feedback_id: Mapped[int] = mapped_column(primary_key=True)
     notes: Mapped[str]
+    contact: Mapped[str]
     time: Mapped[str]
     mural_id: Mapped[int] = mapped_column(ForeignKey("murals.id"))
     mural: Mapped[Mural] = relationship()
@@ -156,6 +163,7 @@ def mural_json(mural: Mural):
         db.select(Image)
             .join(ImageMuralRelation, Image.id == ImageMuralRelation.image_id)
             .where(ImageMuralRelation.mural_id == mural.id)
+            .order_by(Image.ordering)
     ).scalars()
     images = []
     thumbnail = None
@@ -170,14 +178,36 @@ def mural_json(mural: Mural):
         "title": mural.title,
         "year": mural.year,
         "location": mural.location,
+        "remarks": mural.remarks,
         "notes": mural.notes,
         "prevmuralid": prevmuralid,
         "nextmuralid": mural.nextmuralid,
-        "active": mural.active,
+        "private_notes": mural.private_notes,
+        "active": "checked" if mural.active else "unchecked",
         "thumbnail": thumbnail,
         "artists": artists,
         "images": images,
-        "spotify": mural.spotify
+        "spotify": mural.spotify,
+        "tags": getTags(mural.id)
+    }
+
+"""
+Create a JSON object for Feedback
+"""
+def feedback_json(feedback: Feedback):
+    feedback = feedback[0]
+    dt = datetime.now(timezone.utc)
+    dt = dt.replace(tzinfo=None)
+    fb_dt = feedback.time
+    diff = dt-fb_dt
+
+    return {
+        "id": feedback.feedback_id,
+        "mural_id": feedback.mural_id,
+        "notes": feedback.notes,
+        "contact": feedback.contact,
+        "approxtime": "{0} days ago".format(diff.days), #approx_time,
+        "exacttime": fb_dt
     }
 
 """
@@ -186,7 +216,17 @@ Create a JSON object for an artist
 def artist_json(artist: Artist):
     return {
         "id": artist.id,
-        "name": artist.name
+        "name": artist.name,
+        "notes": artist.notes
+    }
+
+"""
+Create a JSON object for a tag
+"""
+def tag_json(tag: Tag):
+    return {
+        "name": tag.name,
+        "description": tag.description
     }
 
 """
@@ -198,6 +238,8 @@ def image_json(image: Image):
         "ordering": image.ordering,
         "caption": image.caption,
         "alttext": image.alttext,
+        "attribution": image.attribution,
+        "datecreated": image.datecreated,
         "id": image.id
     }
     if image.fullsizehash != None:
@@ -251,6 +293,23 @@ def getAllMurals():
     ).items))
 
 """
+Get all tags
+"""
+def getAllTags():
+    return list(db.session.execute(
+            db.select(Tag)
+        ).scalars())
+
+"""
+Get Feedback for a Mural
+"""
+def getMuralFeedback(mural_id):
+    return list(map(feedback_json, db.session.execute(
+        db.select(Feedback)
+            .where(Feedback.mural_id == mural_id)
+    )))
+
+"""
 Get all murals from year
 """
 def getAllMuralsFromYear(year):
@@ -290,6 +349,77 @@ def getArtistDetails(id):
     ).scalar_one())
 
 """
+Get Tag details
+"""
+def getTagDetails(name):
+    return tag_json(db.session.execute(
+        db.select(Tag).where(Tag.name == name)
+    ).scalar_one())
+
+"""
+Exports database tables to CSV files
+Stores in provided directory
+"""
+def export_database(dir, public):
+    if public:
+        mural_select = db.select(Mural.id, Mural.title, Mural.notes, Mural.remarks, Mural.year, Mural.location, Mural.spotify)\
+            .order_by(Mural.id.asc())
+    else:
+        mural_select = db.select(Mural.id, Mural.title, Mural.private_notes, Mural.notes, Mural.remarks, Mural.year, Mural.location, Mural.spotify)\
+            .order_by(Mural.id.asc())
+        
+        feedback_select = db.select(Feedback).order_by(Feedback.feedback_id.asc())
+        feedback_df = pd.read_sql(feedback_select, db.engine)
+        feedback_df.to_csv(dir+"feedback.csv")
+        
+    murals_df = pd.read_sql(mural_select, db.engine)
+
+    murals_df['tags'] = murals_df.apply(lambda x: getTags(x['id']), axis=1)
+    murals_df['artists'] = murals_df.apply(lambda x: getArtists(x['id']), axis=1)
+
+    images_select = db.select(Image.id, Image.caption, Image.alttext, Image.attribution, Image.datecreated).where(Image.ordering != 0).order_by(Image.id.asc())
+
+    images_df = pd.read_sql(images_select, db.engine)
+
+    if not os.path.exists(dir):
+        os.makedirs(dir)
+
+    murals_df.to_csv(dir+"murals.csv")
+    images_df.to_csv(dir+"images.csv")
+
+"""
+Exports images to <path>/images
+"""
+def export_images(path):
+    murals = db.session.execute(
+        db.select(Mural)
+            .order_by(Mural.id.asc())
+    ).scalars()
+
+    for m in murals:
+        images = db.session.execute(
+            db.select(Image)
+                .join(ImageMuralRelation, ImageMuralRelation.image_id == Image.id)
+                .where(ImageMuralRelation.mural_id == m.id)
+                .filter(Image.ordering != 0)
+        ).scalars()
+
+        basepath = path + "images/" + str(m.id) + "/"
+
+        if not os.path.exists(basepath):
+            os.makedirs(basepath)
+
+        for i in images:
+            get_file(app.config['BUCKET_NAME'], i.fullsizehash, basepath + str(i.ordering) + ".jpg", app.config['S3_KEY'], app.config['S3_SECRET'])
+            
+
+"""
+Imports data export into database, S3
+"""
+def import_data(file):
+    return
+
+"""
 Get mural details
 """
 def getMural(id):
@@ -322,26 +452,14 @@ def checkArtistExists(id):
     if not id.isdigit():
         return False
 
-    integer_pattern = r'^[+-]?\d+$'
-
-    # Use re.match to check if the variable matches the integer pattern
-    if not re.match(integer_pattern, str(id)):
-        return False
-
-    return True
+    return db.session.execute(db.select(Artist).where(Artist.id == id)).scalar() != None
 
 def checkMuralExists(id):
     # Check id is not bad
     if not id.isdigit():
         return False
-
-    integer_pattern = r'^[+-]?\d+$'
-
-    # Use re.match to check if the variable matches the integer pattern
-    if not re.match(integer_pattern, str(id)):
-        return False
-
-    return True
+    
+    return db.session.execute(db.select(Mural).where(Mural.id == id)).scalar() != None
 
 """
 Get all murals with given tag
@@ -369,6 +487,16 @@ def getTags(mural_id=None):
             db.select(Tag.name)
                 .join(MuralTag, MuralTag.tag_id == Tag.id)
                 .where(MuralTag.mural_id == mural_id)
+        ).scalars())
+
+"""
+Get artist names for given mural
+"""
+def getArtists(mural_id):
+    return list(db.session.execute(
+            db.select(Artist.name)
+                .join(ArtistMuralRelation, Artist.id == ArtistMuralRelation.artist_id)
+                .where(ArtistMuralRelation.mural_id == mural_id)
         ).scalars())
 
 """
@@ -423,7 +551,7 @@ def tags():
     if tag == None:
         return render_template("404.html"), 404
     else:
-        return render_template("filtered.html", pageTitle="Tag - {0}".format(tag), subHeading="Tagged", murals=getMuralsTagged(tag))
+        return render_template("filtered.html", pageTitle="Tag - {0}".format(tag), subHeading=getTagDetails(tag)['description'], murals=getMuralsTagged(tag))
 
 """
 Get next page of murals
@@ -444,7 +572,7 @@ Page for specific mural details
 @app.route("/murals/<id>")
 def mural(id):
     if (checkMuralExists(id)):
-        return render_template("mural.html", muralDetails=getMural(id), tags=getTags(id), spotify=getMural(id)['spotify'])
+        return render_template("mural.html", muralDetails=getMural(id), spotify=getMural(id)['spotify'])
     else:
         return render_template("404.html"), 404
 
@@ -454,7 +582,7 @@ Page for specific artist
 @app.route("/artist/<id>")
 def artist(id):
     if (checkArtistExists(id)):
-        return render_template("filtered.html", pageTitle="Artist Search", subHeading=getArtistDetails(id), murals=getAllMuralsFromArtist(id))
+        return render_template("filtered.html", pageTitle="Artist: {0}".format(getArtistDetails(id)['name']), subHeading=getArtistDetails(id)['notes'], murals=getAllMuralsFromArtist(id))
     else:
         return render_template("404.html"), 404
 
@@ -497,6 +625,38 @@ def debug_only(f):
         return abort(404)
     return wrapped
 
+def make_thumbnail(mural_id, file):
+
+    with PilImage.open(file) as im:
+        if (im.width == 256 or im.height == 256):
+            # Already a thumbnail
+            #print("Already a thumbnail...")
+            return False
+        im = crop_center(im, min(im.size), min(im.size))
+        im.thumbnail((256,256))
+
+        im = im.convert("RGB")
+        im.save(file + ".thumbnail", "JPEG")
+
+    with open(file + ".thumbnail", "rb") as tb:
+
+        file_hash = hashlib.md5(tb.read()).hexdigest()
+        tb.seek(0)
+
+        # Upload thumnail version
+        upload_file(s3_bucket, file_hash, tb, (file + ".thumbnail"))
+
+        img = Image(
+            imghash=file_hash,
+            ordering=0
+        )
+        db.session.add(img)
+        db.session.flush()
+
+        img_id = img.id
+        db.session.add(ImageMuralRelation(image_id=img_id, mural_id=mural_id))
+        db.session.commit()
+
 """
 Delete artist and all relations from DB
 """
@@ -508,6 +668,24 @@ def deleteArtistGivenID(id):
     db.session.execute(
         db.delete(Artist)
             .where(Artist.id == id)
+    )
+    db.session.commit()
+
+"""
+Delete tag and all relations from DB
+"""
+def deleteTagGivenName(name):
+    t = db.session.execute(
+        db.select(Tag)
+            .where(Tag.name == name)
+    ).scalar_one()
+    db.session.execute(
+        db.delete(MuralTag)
+            .where(MuralTag.tag_id == t.id)
+    )
+    db.session.execute(
+        db.delete(Tag)
+            .where(Tag.id == t.id)
     )
     db.session.commit()
 
@@ -530,6 +708,20 @@ def deleteMuralEntry(id):
         db.delete(ArtistMuralRelation)
             .where(ArtistMuralRelation.mural_id == id)
     )
+    db.session.execute(
+        db.delete(MuralTag)
+            .where(MuralTag.mural_id == id)
+    )
+    db.session.execute(
+        db.delete(Feedback)
+            .where(Feedback.mural_id == id)
+    )
+
+    m = db.session.execute(
+        db.select(Mural).where(Mural.id == id)
+    ).scalar_one()
+
+    db.session.query(Mural).filter_by(nextmuralid = id).update({'nextmuralid' : m.nextmuralid})
     db.session.execute(
         db.delete(Mural)
             .where(Mural.id == id)
@@ -575,7 +767,8 @@ def uploadImageResize(file, mural_id, count):
         img = Image(
             fullsizehash=fullsizehash,
             ordering=count,
-            imghash=file_hash
+            imghash=file_hash,
+            datecreated=datetime.now()
         )
         db.session.add(img)
         db.session.flush()
@@ -593,7 +786,7 @@ Route to edit mural page
 @app.route('/edit/<id>')
 @debug_only
 def edit(id):
-    return render_template("edit.html", muralDetails=getMural(id))
+    return render_template("edit.html", muralDetails=getMural(id), muralFeedback=getMuralFeedback(id), tags=getAllTags(), artists=getAllArtists())
 
 """
 Route to the admin panel
@@ -601,7 +794,7 @@ Route to the admin panel
 @app.route("/admin")
 @debug_only
 def admin():
-    return render_template("admin.html", murals=getAllMurals(), artists=getAllArtists())
+    return render_template("admin.html", tags=getAllTags(), murals=getAllMurals(), artists=getAllArtists())
 
 
 ########################
@@ -613,12 +806,12 @@ Suggestion/feedback form
 """
 @app.route("/suggestion", methods=["POST"])
 def submit_suggestion():
-    print(request.form)
 
     dt = datetime.now(timezone.utc)
 
     db.session.add(Feedback(
         notes=request.form["notes"],
+        contact=request.form["contact"],
         time=str(dt),
         mural_id=request.form["muralid"]
     ))
@@ -637,6 +830,12 @@ def deleteArtist(id):
         return redirect("/admin")
     else:
         return render_template("404.html"), 404
+    
+@app.route('/deleteTag/<name>', methods=['POST'])
+@debug_only
+def deleteTag(name):
+    deleteTagGivenName(name)
+    return redirect("/admin")
 
 """
 Route to delete mural entry
@@ -651,6 +850,107 @@ def delete(id):
         return render_template("404.html"), 404
 
 """
+Route to edit mural details
+Sets all fields based on http form
+"""
+@app.route('/editmural/<id>', methods=['POST'])
+@debug_only
+def editMural(id):
+    m = db.session.execute(
+        db.select(Mural).where(Mural.id == id)
+    ).scalar_one()
+
+    # Remove existing tag relationships
+    db.session.execute(
+        db.delete(MuralTag)
+            .where(MuralTag.mural_id == m.id)
+    )
+
+    # Relate mural and submitted tags
+    if 'tags' in request.form:
+        if "No Tags" not in request.form.getlist('tags'):
+            for tag in request.form.getlist('tags'):
+                tag_id = db.session.execute(
+                    db.select(Tag.id)
+                        .where(Tag.name == tag)
+                ).scalar()
+
+                rel = MuralTag(tag_id=tag_id, mural_id=m.id)
+                db.session.add(rel)
+
+    # Remove existing artist relationships
+    # (If artists is not in the form submission, the multiselect was blank)
+    db.session.execute(
+        db.delete(ArtistMuralRelation)
+            .where(ArtistMuralRelation.mural_id == m.id)
+    )
+        
+    if 'artists' in request.form:
+        # Relate mural and submitted artists
+        for artist_id in request.form.getlist('artists'):
+            rel = ArtistMuralRelation(artist_id=int(artist_id), mural_id=m.id)
+            db.session.add(rel)
+
+    m.active = True if 'active' in request.form else False
+
+    if request.form['notes'] != 'None':
+        m.notes = request.form['notes']
+    if request.form['remarks'] != 'None':
+        m.remarks = request.form['remarks']
+    if request.form['year'] != 'None':
+        m.year = int(request.form['year'])
+    if request.form['location'] != 'None':
+        m.location = request.form['location']
+    if request.form['private_notes'] != 'None':
+        m.private_notes = request.form['private_notes']
+    if request.form['spotify'] != 'None':
+        m.spotify = request.form["spotify"]
+    if request.form['nextmuralid'] != 'None':
+        m.nextmuralid = request.form['nextmuralid']
+    db.session.commit()
+    return ('', 204)
+
+"""
+Route to edit tag description
+"""
+@app.route('/editTag/<name>', methods=["POST"])
+@debug_only
+def edit_tag(name):
+    t = db.session.execute(
+        db.select(Tag).where(Tag.name == name)
+    ).scalar_one()
+    t.description = request.form['description']
+    db.session.commit()
+    return ('', 204)
+
+"""
+Route to edit Artist notes
+"""
+@app.route('/editArtist/<id>', methods=["POST"])
+@debug_only
+def edit_artist(id):
+    a = db.session.execute(
+        db.select(Artist).where(Artist.id == id)
+    ).scalar_one()
+    a.notes = request.form['notes']
+    db.session.commit()
+    return ('', 204)
+
+"""
+Route to edit mural title
+Sets mural title based on http form
+"""
+@app.route('/edittitle/<id>', methods=['POST'])
+@debug_only
+def editTitle(id):
+    m = db.session.execute(
+        db.select(Mural).where(Mural.id == id)
+    ).scalar_one()
+    m.title = request.form['title']
+    db.session.commit()
+    return ('', 204)
+
+"""
 Route to edit image details
 Set caption and alttext based on http form
 """
@@ -660,10 +960,58 @@ def editImage(id):
     image = db.session.execute(
         db.select(Image).where(Image.id == id)
     ).scalar_one()
-    image.caption = request.form["caption"]
-    image.alttext = request.form["alttext"]
+
+    if request.form['caption'].strip() != '':
+        image.caption = request.form["caption"]
+    if request.form['alttext'].strip() != '':
+        image.alttext = request.form["alttext"]
+    if request.form['attribution'].strip() != '':
+        image.attribution = request.form["attribution"]
     db.session.commit()
     return ('', 204)
+
+"""
+Replaces mural thumbnail with selected image
+Route:
+    /makethumbnail?muralid=m_id&imageid=i_id
+"""
+@app.route('/makethumbnail', methods=["POST"])
+@debug_only
+def makeThumbnail():
+    mural_id  = request.args.get('muralid', None)
+    image_id  = request.args.get('imageid', None)
+
+    # Delete references to current thumbnail
+    curr_thumbnail = db.session.execute(
+        db.select(Image)
+            .join(ImageMuralRelation, ImageMuralRelation.image_id == Image.id)
+            .where(ImageMuralRelation.mural_id == mural_id)
+            .filter(Image.ordering == 0)
+    ).scalar_one()
+
+    db.session.execute(
+        db.delete(ImageMuralRelation)
+            .where(ImageMuralRelation.image_id == curr_thumbnail.id)
+    )
+    db.session.execute(
+        db.delete(Image)
+            .where(Image.id == curr_thumbnail.id)
+    )
+
+    # Remove file from S3
+    remove_file(s3_bucket, curr_thumbnail.imghash)
+
+    # Download base photo, turn it into thumbnail
+    image = db.session.execute(
+        db.select(Image)
+            .where(Image.id == image_id)
+    ).scalar_one()
+    newfilename = '/tmp/{0}.thumb'.format(image.id)
+
+    get_file(app.config['BUCKET_NAME'], image.imghash, newfilename, app.config['S3_KEY'], app.config['S3_SECRET'])
+    make_thumbnail(mural_id, newfilename)
+    
+    return redirect("/edit/{0}".format(mural_id))
 
 """
 Route to delete image
@@ -677,17 +1025,75 @@ def deleteImage(id):
 
     for image in images:
         remove_file(s3_bucket, image.imghash)
-    db.session.execute(
-        db.delete(ImageMuralRelation)
-            .where(ImageMuralRelation.image_id == id)
-    )
-    db.session.execute(
-        db.delete(Image)
-            .where(Image.id == id)
-    )
+        db.session.execute(
+            db.delete(ImageMuralRelation)
+                .where(ImageMuralRelation.image_id == id)
+        )
+        db.session.execute(
+            db.delete(Image)
+                .where(Image.id == id)
+        )
     db.session.commit()
 
-    return redirect("/edit/{0}".format(id))
+    return ('', 204)
+
+"""
+Route to perform public export
+"""
+@app.route("/export", methods=["POST"])
+@debug_only
+def export_data():
+    public = bool(int(request.args.get("p")))
+    now = datetime.now()
+    dir_name = "export" + now.strftime("%d%m%Y")
+    basepath = "tmp/"
+
+    export_images(basepath+dir_name+"/")
+    export_database(basepath+dir_name+"/", public)
+
+    shutil.make_archive(basepath+dir_name, "zip", basepath+dir_name)
+
+    return send_file(basepath+dir_name+".zip")
+
+"""
+Route to perform data import
+"""
+@app.route("/import", methods=["POST"])
+@debug_only
+def import_data():
+    return ('', 501)
+
+"""
+Add artist with blank notes
+"""
+@app.route("/addArtist", methods=["POST"])
+@debug_only
+def add_artist():
+    artist = Artist(
+        name=request.form['name'],
+        notes=""
+    )
+
+    db.session.add(artist)
+    db.session.commit()
+
+    return redirect("/admin")
+
+"""
+Add tag with blank description
+"""
+@app.route("/addTag", methods=["POST"])
+@debug_only
+def add_tag():
+    tag = Tag(
+        name=request.form['name'],
+        description=""
+    )
+
+    db.session.add(tag)
+    db.session.commit()
+
+    return redirect("/admin")
 
 """
 Route to upload new image
@@ -712,7 +1118,7 @@ Route to add new mural entry
 @app.route("/upload", methods=["POST"])
 @debug_only
 def upload():
-    artistKnown = True if request.form.get('artistknown','on') else False
+    artistKnown = True if 'artistKnown' in request.form else False
     if not (request.form["year"].isdigit()):
         return render_template("404.html"), 404
 
@@ -721,7 +1127,8 @@ def upload():
         artistknown=artistKnown,
         notes=request.form["notes"],
         year=request.form["year"],
-        location=request.form["location"]
+        location=request.form["location"],
+        active=False
     )
     db.session.add(mural)
     db.session.flush()
