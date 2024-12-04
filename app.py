@@ -93,11 +93,7 @@ class Feedback(Base):
 
 app = Flask(__name__)
 
-formatter = json_log_formatter.JSONFormatter()
-json_handler = logging.StreamHandler()
-json_handler.setFormatter(formatter)
 logger = logging.getLogger()
-logger.addHandler(json_handler)
 logger.setLevel(logging.INFO)
 
 
@@ -107,6 +103,15 @@ if os.path.exists(os.path.join(os.getcwd(), "config.py")):
     app.config.from_pyfile(os.path.join(os.getcwd(), "config.py"))
 else:
     app.config.from_pyfile(os.path.join(os.getcwd(), "config.env.py"))
+
+
+if app.config["JSON_LOGS"] is True:
+    formatter = json_log_formatter.JSONFormatter()
+    json_handler = logging.StreamHandler()
+    json_handler.setFormatter(formatter)
+    logger.addHandler(json_handler)
+
+logging.info("Starting up...")
 
 git_cmd = ['git', 'rev-parse', '--short', 'HEAD']
 app.config["GIT_REVISION"] = subprocess.check_output(git_cmd).decode('utf-8').rstrip()
@@ -314,6 +319,14 @@ def getAllMuralsFromYear(year):
             .order_by(Mural.title.asc()),
         per_page=150,
     ).items))
+
+"""
+Get all tags
+"""
+def getAllTags():
+    return list(db.session.execute(
+        db.select(Tag.name)
+    ).scalars())
 
 """
 Get all murals from artist given artist ID
@@ -527,7 +540,7 @@ def about():
 def catalog():
     query = request.args.get("q")
     if query == None:
-        return render_template("catalog.html", q=query, murals=getMuralsPaginated(0))
+        return render_template("catalog.html", q=query, murals=getMuralsPaginated(0), tags=getAllTags())
     else:
         return render_template("filtered.html", pageTitle="Query - {0}".format(query), subHeading="Search Query", q=query, murals=searchMurals(query))
 
