@@ -85,7 +85,3 @@ create table tags (
   description text not null
 );
 ```
-<<<<<<< HEAD
-=======
->>>>>>> 5387c04 (Added Schema to readme)
->>>>>>> b6ae14a (Added Schema to readme)
