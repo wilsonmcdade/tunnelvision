@@ -2,6 +2,24 @@
 {% block title %}
 {{ muralDetails["title"] }} - TunnelVision
 {% endblock %}
+{% block metadata %}
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://tunnelvision.csh.rit.edu/murals/{{ muralDetails['id'] }}" />
+<meta property="og:title" content="{{ muralDetails['title'] }}" />
+<meta property="og:description" content="{{ muralDetails['notes'] }}" />
+<meta property="og:image" content="{{ muralDetails['thumbnail'] }}" />
+<meta name="twitter:card" content="summary">
+<meta name="twitter:domain" value="tunnelvision.csh.rit.edu" />
+<meta name="twitter:title" value="{{ muralDetails['title'] }}" />
+<meta name="twitter:description" value="{{ muralDetails['notes'] }}" />
+<meta name="twitter:image" content="{{ muralDetails['thumbnail'] }}" />
+<meta name="twitter:url" value="https://tunnelvision.csh.rit.edu/murals/{{ muralDetails['id'] }}" />
+<meta name="twitter:label1" value="Year" />
+<meta name="twitter:data1" value="{{ muralDetails['year'] }}" />
+<meta name="twitter:label2" value="Location" />
+<meta name="twitter:data2" value="{{ muralDetails['location'] }}" />
+<meta name="description" value="TunnelVision is an interactive catalog of the mural under RIT's Residence Halls." />
+{% endblock %}
 {% block dynamic_content %}
 
 <style>

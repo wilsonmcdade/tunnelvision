@@ -1,4 +1,18 @@
 {% extends "header.html" %}
+{% block metadata %}
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://tunnelvision.csh.rit.edu" />
+<meta property="og:title" content="TunnelVision" />
+<meta property="og:description" content="TunnelVision is an interactive catalog of the mural under RIT's Residence Halls." />
+<meta property="og:image" content="{{ url_for('static', filename='images/favicon.png') }}" />
+<meta name="twitter:card" content="summary">
+<meta name="twitter:domain" value="tunnelvision.csh.rit.edu" />
+<meta name="twitter:title" value="TunnelVision" />
+<meta name="twitter:description" value="TunnelVision is an interactive catalog of the mural under RIT's Residence Halls." />
+<meta name="twitter:image" content="{{ url_for('static', filename='images/favicon.png') }}" />
+<meta name="twitter:url" value="https://tunnelvision.csh.rit.edu" />
+<meta name="description" value="TunnelVision is an interactive catalog of the mural under RIT's Residence Halls." />
+{% endblock %}
 {% block content %}
 <style>
     .carousel-full-background {
