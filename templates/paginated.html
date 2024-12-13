@@ -5,16 +5,25 @@
     hx-trigger="revealed"
     hx-swap="afterend"
 {% endif %}>
-    <div>
-        <a style="text-decoration: none;" href="/murals/{{ mural['id'] }}">
-        <img class="card-img-top" src="{{ mural['thumbnail'] }}">
+<div>
+    <a style="text-decoration: none; color:inherit" href="/murals/{{ mural['id'] }}">
+    <img class="card-img-top" src="{{ mural['thumbnail'] }}">
+        {% if mural['tags']|length > 0 %}
         <div class="card-body">
-            <p>{{ mural['title'] }}</p>
-            <p>({% if mural["year"] != 0 %}{{ mural["year"] }}{% else %}Unknown{% endif %})</p>
-        </div>
-        </div>
-    </a>
+        <p style="margin-bottom: 2px;">{{ mural['title'] }}</p>
+        <p style="margin-bottom: 4px">({% if mural["year"] != 0 %}{{ mural["year"] }}{% else %}Unknown{% endif %})</p>
+        {% for tag in mural['tags'] %}
+        <p style="margin-bottom: 2px" class="chip small">{{ tag }}</p>
+        {% endfor %}
+        {% else %}
+        <div class="card-body">
+        <p style="margin-bottom: 4px">{{ mural['title'] }}</p>
+        <p>({% if mural["year"] != 0 %}{{ mural["year"] }}{% else %}Unknown{% endif %})</p>
+        {% endif %}
     </div>
+    </div>
+</a>
+</div>
 {% endmacro %}
 
 {% for mural in murals %}

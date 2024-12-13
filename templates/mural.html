@@ -59,7 +59,7 @@
                         <div class="carousel-caption d-none d-md-block banner-value">
                             {% if muralDetails['images'][loop.index-1]['caption'] != None %}<p class="no-a-styles">
 {{ muralDetails['images'][loop.index-1]['caption'] }}</p>{% endif %}
-                            <pre style="font-family:inherit;font-size:inherit">{% if muralDetails['images'][loop.index-1]['attribution'] != None %}Photo: {{ muralDetails['images'][loop.index-1]['attribution']}}{% if muralDetails['images'][loop.index-1]['datecreated'] != None %}, {{ muralDetails['images'][loop.index-1]['datecreated'].strftime("%B %d, %Y") }}{% endif %}{% endif %}{% if muralDetails['images'][loop.index-1]['fullsizeimage']%}<a class="no-a-styles" href="{{ muralDetails['images'][loop.index-1]['fullsizeimage'] }}">
+                            <pre style="font-family:inherit;font-size:inherit;text-wrap:wrap">{% if muralDetails['images'][loop.index-1]['attribution'] != None %}Photo: {{ muralDetails['images'][loop.index-1]['attribution']}}{% if muralDetails['images'][loop.index-1]['datecreated'] != None %}, {{ muralDetails['images'][loop.index-1]['datecreated'].strftime("%B %d, %Y") }}{% endif %}{% endif %}{% if muralDetails['images'][loop.index-1]['fullsizeimage']%}<a class="no-a-styles" href="{{ muralDetails['images'][loop.index-1]['fullsizeimage'] }}">
 View Full Size Image</a>{% endif %}</pre>
                         </div>
                     </div>
@@ -81,7 +81,7 @@ View Full Size Image</a>{% endif %}</pre>
         <div class="col-lg-4 col-md-12">
             {% if muralDetails["notes"] != '' %}
             <h3>Description:</h3>
-            <pre style="font-family:inherit;font-size:inherit">{{ muralDetails["notes"] }} </pre>
+            <pre style="font-family:inherit;font-size:inherit; text-wrap:wrap">{{ muralDetails["notes"] }} </pre>
             {% endif %}
             <h3>Year:</h3>
             <p><a href="/year/{{ muralDetails['year'] }}">{% if muralDetails["year"] != 0 %}{{ muralDetails["year"] }}{% else %}Unknown{% endif %}</a></p>
@@ -108,7 +108,7 @@ View Full Size Image</a>{% endif %}</pre>
             </ul>
             {% endif %}
             
-            {% if muralDetails["remarks"] != '' %}
+            {% if muralDetails["remarks"] %}
             <div class="accordion" id="remarkdropdown">
                 <div class="accordion-item">
                     <h2 class="accordion-header" id="remarkheading" title="Remarks can provide additional information about a piece, including details sourced from suggestions, conversations, and other casual sources.">
@@ -119,7 +119,7 @@ View Full Size Image</a>{% endif %}</pre>
                     <div id="remarkcollapse" class="accordion-collapse collapse" aria-labelledby="remarkheading" data-bs-parent="#remarkdropdown">
                         <div class="accordion-body">
                             <div class="container">
-                                <pre style="font-family:inherit;font-size:inherit">{{ muralDetails['remarks'] }}</pre>
+                                <pre style="font-family:inherit;font-size:inherit;text-wrap:wrap">{{ muralDetails['remarks'] }}</pre>
                             </div>
                         </div>
                     </div>
