@@ -537,7 +537,8 @@ def about():
 
 @app.route('/open-canvas')
 def openCanvas():
-    return render_template("open-canvas.html")
+    # TODO: Use a random image of the Open Canvas instead of a random mural image
+    return render_template("open-canvas.html", canvasHighlight=getRandomImages(1)[0])
 
 @app.route("/catalog?q=<query>")
 @app.route("/catalog")
