@@ -533,7 +533,7 @@ def home():
 
 @app.route('/about')
 def about():
-    return render_template("about.html", muralHighlights=getRandomImages(0))
+    return render_template("about.html")
 
 @app.route('/open-canvas')
 def openCanvas():
