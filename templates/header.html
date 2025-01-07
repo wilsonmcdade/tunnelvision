@@ -1,5 +1,5 @@
 {% macro muralcard(mural, paginate, pageNum) %}
-<div class="card col-lg-2 col-md-6 col-sm-12 col-xs-12" 
+<div class="card col-lg-2 col-md-6 col-sm-12 col-xs-12"
 {% if paginate %}
     hx-get="/page?p={{ pageNum }}"
     hx-trigger="revealed"
@@ -41,7 +41,7 @@
             body {
                 background-color: rgb(253, 253, 253);
             }
-            
+
             .content-margin {
                 margin-top: 100px; /* Adjust this margin top to match your header height */
             }
@@ -63,7 +63,7 @@
             .thin {
                 font-weight: 300;
             }
-            
+
             .chip {
                 display: inline-block;
                 padding: 0 25px;
@@ -73,7 +73,7 @@
                 border-radius: 25px;
                 background-color: #f1f1f1;
             }
-            
+
             .chip.small {
                 padding: 0 15px;
                 height: 30px;
@@ -132,7 +132,9 @@
                         <li class="nav-item">
                             <h4><a class="nav-link" style="font-size: 1.25rem" aria-current="page" href="/catalog">Catalog</a></h4>
                         </li>
-                        
+                        <li class="nav-item">
+                            <h4><a class="nav-link" style="font-size: 1.25rem" aria-current="page" href="/open-canvas">Open Canvas</a></h4>
+                        </li>
                     </ul>
                 </div>
                 <div class="d-flex gap-3">
