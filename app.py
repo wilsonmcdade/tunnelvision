@@ -535,6 +535,10 @@ def home():
 def about():
     return render_template("about.html", muralHighlights=getRandomImages(0))
 
+@app.route('/open-canvas')
+def openCanvas():
+    return render_template("open-canvas.html")
+
 @app.route("/catalog?q=<query>")
 @app.route("/catalog")
 def catalog():
