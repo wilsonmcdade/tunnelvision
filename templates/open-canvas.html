@@ -2,6 +2,20 @@
 {% block title %}
 Open Canvas - TunnelVision
 {% endblock %}
+{% block metadata %}
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://tunnelvision.csh.rit.edu/open-canvas" />
+<meta property="og:title" content="Open Canvas - TunnelVision" />
+<meta property="og:description" content="The Open Canvas under the RIT Residence Halls is a collaboration between the House of the Arts and the Tunnel Visionaries to foster student expression through art." />
+<meta property="og:image" content="{{ url_for('static', filename='images/favicon.png') }}" />
+<meta name="twitter:card" content="summary">
+<meta name="twitter:domain" value="tunnelvision.csh.rit.edu" />
+<meta name="twitter:title" value="Open Canvas - TunnelVision" />
+<meta name="twitter:description" value="The Open Canvas under the RIT Residence Halls is a collaboration between the House of the Arts and the Tunnel Visionaries to foster student expression through art." />
+<meta name="twitter:image" content="{{ url_for('static', filename='images/favicon.png') }}" />
+<meta name="twitter:url" value="https://tunnelvision.csh.rit.edu/open-canvas" />
+<meta name="description" value="The Open Canvas under the RIT Residence Halls is a collaboration between the House of the Arts and the Tunnel Visionaries to foster student expression through art." />
+{% endblock %}
 {% block dynamic_content %}
 
 <style>
