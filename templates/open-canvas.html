@@ -1,0 +1,231 @@
+{% extends "header.html" %}
+{% block title %}
+Open Canvas - TunnelVision
+{% endblock %}
+{% block metadata %}
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://tunnelvision.csh.rit.edu/open-canvas" />
+<meta property="og:title" content="Open Canvas - TunnelVision" />
+<meta property="og:description" content="The Open Canvas under the RIT Residence Halls is a collaboration between the House of the Arts and the Tunnel Visionaries to foster student expression through art." />
+<meta property="og:image" content="{{ url_for('static', filename='images/favicon.png') }}" />
+<meta name="twitter:card" content="summary">
+<meta name="twitter:domain" value="tunnelvision.csh.rit.edu" />
+<meta name="twitter:title" value="Open Canvas - TunnelVision" />
+<meta name="twitter:description" value="The Open Canvas under the RIT Residence Halls is a collaboration between the House of the Arts and the Tunnel Visionaries to foster student expression through art." />
+<meta name="twitter:image" content="{{ url_for('static', filename='images/favicon.png') }}" />
+<meta name="twitter:url" value="https://tunnelvision.csh.rit.edu/open-canvas" />
+<meta name="description" value="The Open Canvas under the RIT Residence Halls is a collaboration between the House of the Arts and the Tunnel Visionaries to foster student expression through art." />
+{% endblock %}
+{% block dynamic_content %}
+
+<style>
+.banner-text {
+    position: relative;
+    left: 0;
+    transform: none;
+}
+
+.banner-value {
+    background: rgba(247, 105, 2, 0.6);
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.banner-value-alt {
+    background: rgba(0, 0, 0, 0.8);
+    padding: 10px;
+    border-radius: 5px;
+    margin: 10px 0
+}
+</style>
+
+<div class="container">
+    <div>
+        <img
+            alt="{{ canvasHighlight['alttext'] }}"
+            src="{{ canvasHighlight['imgurl'] }}"
+            style="width: 100%; height: 10lh; object-fit: cover"
+        >
+        <div class="banner-value">
+            <h1 class="banner-text" style="text-decoration: underline;">
+                The Open Canvas
+            </h1>
+            <h2 class="banner-text">
+                by House of the Arts and Tunnel Visionaries
+            </h2>
+        </div>
+    </div>
+    <a style="text-decoration: none;" href="https://forms.gle/ZpNDyLpMT4gAv6kCA">
+        <div class="banner-value-alt"><h5 class="banner-text">
+            Have feedback? Want to report a problem? Click here!
+        </h5></div>
+    </a>
+
+    <h3>What is this space?</h3>
+    <p>
+        This is the Open Canvas, a mural space created by House of the Arts and
+        Tunnel Visionaries. Here, we aim to give you a canvas to have creative
+        freedom and share your thoughts and art as students. As time passes and
+        more art accumulates, this mural will develop an identity and voice that
+        represents the diverse backgrounds, thoughts, and creative voices of
+        every individual on campus.
+    </p>
+    <p>
+        The Open Canvas is dedicated to fostering the art and expression of
+        every RIT student and developing a diverse artistic voice. This space is
+        maintained by the efforts of Tunnel Visionaries, House of the Arts, and
+        the Center for Residence Life to support this goal.
+    </p>
+
+    <h3>How can I add to this space?</h3>
+    <p>
+        Simply grab some water-based acrylic paint and start working, no forms
+        needed! Permanent markers are also permitted, but due to the tendency of
+        alcohol-based ink to dissolve paints, they are highly discouraged.
+        Please look below for the guidelines and rules! Note that this space is
+        cyclic, and art will be added over other art as it evolves. Every so often
+        it will be painted white to start with a clean slate, but only once it
+        gets covered in art and develops its own voice!
+    </p>
+
+    <div class="banner-value"><h3 class="banner-text">Guidelines</h3></div>
+    <p><ul>
+        <li>Hate speech of any kind is prohibited</li>
+        <li>Vulgar or explicit imagery of any kind is prohibited</li>
+        <li>Offensive profanity is prohibited</li>
+        <li>Advertisement or promotion of student or commercial organizations is
+            prohibited</li>
+        <li>Political or social commentary is limited to that which fosters
+            inclusivity and diversity of people and their art</li>
+    </ul></p>
+    <p>
+        Speech found in violation of these guidelines or found to be
+        inappropriate by the Center for Residence Life will be removed.
+    </p>
+    <a style="text-decoration: none;" href="https://forms.gle/ZpNDyLpMT4gAv6kCA">
+        <div class="banner-value-alt"><h5 class="banner-text">
+            Click here to submit feedback or report inappropriate media on this
+            space
+        </h5></div>
+    </a>
+    <p>
+        This space is cyclic! Your art will be covered in time as new art is
+        added.
+    </p>
+    <p>
+        Please use only water-based paints and acrylics on this space.
+        Do not use:
+        <ul>
+            <li>Aerosols</li>
+            <li>Volatile organic compounds (mineral spirits,
+                alcohol/permanent markers, etc)</li>
+            <li>Etching or scratching tools</li>
+            <li>Adhesives</li>
+            <li>Non-water-based paints or inks</li>
+        </ul>
+    </p>
+
+    <!--
+        Gallery
+        Here is a gallery of photos taken of the Open Canvas as it evolves! Photos are taken at the discretion of House of the Arts and Tunnel Visionaries, and before any time the mural is returned to a blank slate.
+        [TIMELAPSE]
+
+        This timelapse, maintained by Tunnel Visionaries, shows the growth of this mural as students share their thoughts, art, and soul on this wall. As it progresses, the students here at RIT will be able to demonstrate their experiences, thoughts, and the abstract side of what it means to be here, and to be human.
+    -->
+
+    <h3>Frequently Asked Questions</h3>
+    <div class="accordion" id="faq" style="margin-bottom: 3rlh">
+        <div class="accordion-item">
+            <h4 class="accordion-header"><button
+                class="accordion-button collapsed"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#faq-collapse1"
+                aria-expanded="false"
+                aria-controls="faq-collapse1"
+            >
+                What are House of the Arts and Tunnel Visionaries?
+            </button></h4>
+            <div
+                id="faq-collapse1"
+                class="accordion-collapse collapse"
+            ><div class="accordion-body">
+                <p>
+                    House of the Arts is a special interest house on campus, and
+                    is the combined art-focused group from the previous Art
+                    House and Photo House. It aims to facilitate art of all
+                    forms, and develop a safe, connected group of artistically
+                    driven people.
+                </p>
+                <p>
+                    Tunnel Visionaries is a club focused on appreciating the
+                    many murals found in the tunnel systems of RIT and
+                    advocating for their preservation, as well as the many
+                    murals found around the Rochester region. Combining its art
+                    and history focus, it also maintains the <a href="/">TunnelVision</a> website,
+                    a digital catalog of all the murals under the Residence Hall
+                    tunnels at RIT.
+                </p>
+                <p><a href="https://discord.gg/eupd4yyJrB">
+                    Join the House of the Arts discord!
+                </a></p>
+                <p><a href="https://discord.gg/39WN2fUDfE">
+                    Join the Tunnel Visionaries discord!
+                </a></p>
+            </div></div>
+        </div>
+        <div class="accordion-item">
+            <h4 class="accordion-header"><button
+                class="accordion-button collapsed"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#faq-collapse2"
+                aria-expanded="false"
+                aria-controls="faq-collapse2"
+            >
+                How long will this last?
+            </button></h4>
+            <div
+                id="faq-collapse2"
+                class="accordion-collapse collapse"
+            ><div class="accordion-body">
+                <p>
+                    This project is currently in a pilot phase. As time goes on,
+                    if this is successful we aim to improve and expand this
+                    mural, and integrate it as a permanent hallmark of the RIT
+                    tunnels. In this endeavor, it is important for all users to
+                    respect this space, so that it can continue to be the most
+                    interesting landmark of the tunnels!
+                </p>
+            </div></div>
+        </div>
+        <div class="accordion-item">
+            <h4 class="accordion-header"><button
+                class="accordion-button collapsed"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#faq-collapse3"
+                aria-expanded="false"
+                aria-controls="faq-collapse3"
+            >
+                Where is the Open Cavas?
+            </button></h4>
+            <div
+                id="faq-collapse3"
+                class="accordion-collapse collapse"
+            ><div class="accordion-body">
+                <p>
+                    The current location of the Open Canvas is in the tunnels
+                    underneath Baker Hall, just passed curved tunnel to Grace
+                    Watson Hall (coming from Kate Gleason Hall).
+                </p>
+                <img
+                    alt="A map of the tunnels showing the location of the Open Canvas"
+                    src="{{ url_for('static', filename='images/open_canvas_location.png') }}"
+                >
+            </div></div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
