@@ -383,8 +383,8 @@ def export_database(dir, public):
 
     images_df = pd.read_sql(images_select, db.engine)
 
-    if not os.path.exists(dir):
-        os.makedirs(dir)
+    if not Path(dir).exists():
+        Path(dir).mkdir()
 
     murals_df.to_csv(dir+"murals.csv")
     images_df.to_csv(dir+"images.csv")
@@ -408,8 +408,8 @@ def export_images(path):
 
         basepath = path + "images/" + str(m.id) + "/"
 
-        if not os.path.exists(basepath):
-            os.makedirs(basepath)
+        if not Path(basepath).exists():
+            Path(basepath).mkdir()
 
         for i in images:
             get_file(app.config['BUCKET_NAME'], i.fullsizehash, basepath + str(i.ordering) + ".jpg", app.config['S3_KEY'], app.config['S3_SECRET'])
