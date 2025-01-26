@@ -201,7 +201,7 @@ def feedback_json(feedback: Feedback):
         "mural_id": feedback.mural_id,
         "notes": feedback.notes,
         "contact": feedback.contact,
-        "approxtime": "{0} days ago".format(diff.days), #approx_time,
+        "approxtime": f"{diff.days} days ago"), #approx_time,
         "exacttime": fb_dt
     }
 
@@ -582,7 +582,7 @@ Page for specific artist
 @app.route("/artist/<id>")
 def artist(id):
     if (checkArtistExists(id)):
-        return render_template("filtered.html", pageTitle="Artist: {0}".format(getArtistDetails(id)['name']), subHeading=getArtistDetails(id)['notes'], murals=getAllMuralsFromArtist(id))
+        return render_template("filtered.html", pageTitle=f"Artist: {getArtistDetails(id)['name']}", subHeading=getArtistDetails(id)['notes'], murals=getAllMuralsFromArtist(id))
     else:
         return render_template("404.html"), 404
 
@@ -1006,7 +1006,7 @@ def makeThumbnail():
         db.select(Image)
             .where(Image.id == image_id)
     ).scalar_one()
-    newfilename = '/tmp/{0}.thumb'.format(image.id)
+    newfilename = f'/tmp/{image.id}.thumb'
 
     get_file(app.config['BUCKET_NAME'], image.imghash, newfilename, app.config['S3_KEY'], app.config['S3_SECRET'])
     make_thumbnail(mural_id, newfilename)
