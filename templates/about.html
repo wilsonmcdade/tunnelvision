@@ -1,4 +1,4 @@
-{% extends "header.html" %} 
+{% extends "header.html" %}
 {% block title %}
 About - TunnelVision
 {% endblock %}
@@ -10,44 +10,103 @@ About - TunnelVision
     <!-- Just threw together a boilerplate -->
     <div class="container my-5">
         <div class="row align-items-center">
-                <div class="col-md-6">
-                    <img class="img-fluid" alt="Construction photos of the RIT residence halls, circa 1966. Some tunnels are exposed as they are being built." src="{{ url_for('static', filename='images/aerial_construction.png') }}">
+            <div class="col-md-6">
+                <img class="img-fluid"
+                    alt="Construction photos of the RIT residence halls, circa 1966. Some tunnels are exposed as they are being built."
+                    src="{{ url_for('static', filename='images/aerial_construction.png') }}">
+            </div>
+            <div class="col-md-6 align-left">
+                <p>
+                    "TunnelVision" is created by <a href="https://wmcda.de">Wilson McDade</a> with help from <a
+                        href="https://www.linkedin.com/in/kasimomeally/">Kasim O'Meally</a> to highlight the tunnels in
+                    RIT's residence halls.
+                </p>
+                <p>
+                    Special thanks to Jessica Lieberman, Erin Monahan, and Beckett Jenen for helping to make this
+                    project
+                    possible.
+                </p>
+                <p>Do you have a suggestion? Reach out to us at <a
+                        href="mailto:tunnelvision@csh.rit.edu">tunnelvision@csh.rit.edu</a></p>
+            </div>
+            <div class="col-md-6 pt-4">
+                <h2>About the Tunnels</h2>
+                <div class="text-start">
+                    <p>
+                        RIT's Residence Halls boast an incredible tunnel system, connecting the dorm halls with stores,
+                        laundry facilities, and dining locations. These tunnels have been around since RIT moved from
+                        Downtown Rochester to Henrietta in 1969. Many accounts from early .in our time at the Henrietta
+                        campus were of an unfinished and eerie campus: the Quarter Mile was a muddy, unpaved mess;
+                        active projects surrounded you; many cultural norms and unifying traditions hadn't been
+                        established yet. The residence halls were similarly unfinished, with blank, lonely, bare
+                        concrete walls, cinderblocks, and storage cages.
+                    </p>
+                    <p>
+                        At the same time as RIT was establishing itself at the Henrietta campus, America was going
+                        through a politically turbulent time - with college students at the forefront of these changes.
+                        Following the 1970 Kent State shootings, where Ohio National Guard soldiers opened fire at
+                        students protesting the Vietnam War, college students everywhere were disgruntled and looking
+                        for an outlet for that energy. The story goes that Stan McKenzie, a professor with the College
+                        of Liberal Arts, proposed that students channel their energies and express themselves through
+                        the painting of murals in the residence hall tunnels under Kate Gleason and Nathaniel Rochester
+                        Residence Halls <a href="https://www.rit.edu/news/beginning-murals-tunnels">[1]</a>. After some
+                        time, these crude murals were put up on the walls, and an official mural creation process was
+                        adopted, which is very similar to what we see today.
+                    </p>
                 </div>
-                <div class="col-md-6 align-left">
-                    <p>"TunnelVision" is created by <a href="https://wmcda.de">Wilson McDade</a> with help from <a href="https://www.linkedin.com/in/kasimomeally/">Kasim O'Meally</a> to highlight the tunnels in RIT's residence halls.</p>
-                    <p>Special Thanks to Jessica Lieberman, Erin Monahan, and Beckett Jenen for helping to make this project possible.</p>
-                    <p>Do you have a suggestion? Reach out to us at <a href="mailto:tunnelvision@csh.rit.edu">tunnelvision@csh.rit.edu</a></p>
+            </div>
+            <div class="col-md-6">
+                <img class="img-fluid" alt="Students joyfully paint graffiti in the tunnels, circa 1970"
+                    src="{{ url_for('static', filename='images/yrbk_1970.png') }}">
+            </div>
+            <div class="col-md-6">
+                <img class="img-fluid" alt="Photo of a dimly lit tunnel with two students walking through."
+                    src="{{ url_for('static', filename='images/yrbk_1983.png') }}">
+            </div>
+            <div class="col-md-6 pt-4">
+                <h2>About the Project</h2>
+                <div class="text-start">
+                    <p>
+                        50 years later, students living in the residence halls still walk the tunnels daily,
+                        going to the Corner Store for snacks, doing laundry under Sol Heumann hall, or going to Gracie's
+                        to exhaust their required meal plan. As a long-time member of the Computer Science House in DSP
+                        Hall, Wilson McDade became very familiar with the tunnels and developed an appreciation for the
+                        art that decorated them.
+                    </p>
+                    <p>
+                        The catalyst for creating this project was undoubtedly Jess Lieberman's "Imag(in)ing Rochester"
+                        class, which tasks students to observe and critique the spaces they find themselves in. The
+                        class brings students on field trips around Rochester, NY, to explore local history, urban
+                        design, and the semiotics of our spaces. The final project for the class was to create
+                        a map of a place or experience and to create the map so that it might impact your
+                        community or change people's views on a subject. <i>TunnelVision: RIT's Overlooked Art
+                            Museum</i> came out of that class as an experiential map and catalog of the murals in the
+                        tunnels.
+                    </p>
+                    <p>
+                        student in the course was Kasim O'Meally, a Resident Advisor for the Center for Residence
+                        Life (who oversees the current process for creating murals). Wilson and Kasim went
+                        through many archival documents from ResLife. They uncovered a photo album from when the
+                        now-defunct Residence Hall Association, who oversaw the murals, performed an inventory of the
+                        murals. Though the quality of these photos is poor, all of the lost murals were scanned at the
+                        RIT Archives and uploaded to <i>TunnelVision</i> with the tag <a
+                            href="tags?t=RHA SCRAPBOOK">"RHA Scrapbook"</a>.
+                    </p>
                 </div>
-                <div class="col-md-6 pt-4">
-                    <h2>About the Tunnels</h2>
-                    <div class="text-start">
-                        <p>RIT’s Residence Halls boast an incredible tunnel system, connecting the dorm halls with stores, laundry facilities, and dining locations. These tunnels have been around since RIT moved from Downtown Rochester to Henrietta in 1969. Many accounts from early in our time at the Henrietta campus were of an unfinished and eerie campus: the Quarter Mile was a muddy, unpaved mess; active projects surrounded you; many cultural norms and unifying traditions hadn’t been established yet. The residence halls were similarly unfinished, with blank, lonely walls of bare concrete, cinderblock, and storage cages.</p>
-                        <p>At the same time as RIT was establishing itself at the Henrietta campus, America was going through a politically turbulent time – with college students at the forefront of these changes. Following the 1970 Kent State shootings, where Ohio National Guard soldiers opened fire at students protesting the Vietnam War, college students everywhere were disgruntled and looking for an outlet for that energy. The story goes that Stan McKenzie, a professor with the College of Liberal Arts, proposed that students channel their energies and express themselves through the painting of murals in the residence hall tunnels under Kate Gleason and Nathaniel Rochester Residence Halls <a href="https://www.rit.edu/news/beginning-murals-tunnels">[1]</a>. After some time of these crude murals being up on the walls, an official mural creation process was adopted, which is very similar to what we see today.</p>
-                    </div>
+            </div>
+            <div class="col-md-6">
+                <h2>About the Tunnel Visionaries</h2>
+                <div class="text-start">
+                    <p>The <i>TunnelVision</i> project has now evolved into more than just a website; Wilson and Kasim
+                        have started a club, the Tunnel Visionaries, to tell the story of the murals, help maintain
+                        them, and help new students appreciate the art in the tunnels. For more info on the club, reach
+                        out to <a href="mailto:tunnelvision@csh.rit.edu">tunnelvision@csh.rit.edu</a>!</p>
                 </div>
-                <div class="col-md-6">
-                    <img class="img-fluid" alt="Students joyfully paint graffiti in the tunnels, circa 1970" src="{{ url_for('static', filename='images/yrbk_1970.png') }}">
-                </div>
-                <div class="col-md-6">
-                    <img class="img-fluid" alt="Photo of a dimly lit tunnel with two students walking through." src="{{ url_for('static', filename='images/yrbk_1983.png') }}">
-                </div>
-                <div class="col-md-6 pt-4">
-                    <h2>About the Project</h2>
-                    <div class="text-start">
-                        <p>50 years later, students living in the residence halls still walk the tunnels on a daily basis, going to the Corner Store for snacks, doing laundry under Sol Heumann hall, or going to Gracie’s to exhaust their required meal plan. As a long-time member of the Computer Science House in DSP Hall, Wilson McDade became very familiar with the tunnels and developed an appreciation for the art that decorated them.</p>
-                        <p>The catalyst for creating this project was undoubtedly Jess Lieberman’s “Imag(in)ing Rochester” class, which tasks students to observe and critique the spaces they find themselves in. The class brings students on field trips around Rochester, NY to explore local history, urban design, and the semiotics of the spaces we occupy. The final project for the class was to create a map of a place or experience and to create the map in such a way that might impact your community or change people’s views on a subject. <i>Tunnelvision: RIT’s Overlooked Art Museum</i> came out of that class as an experiential map and catalog of the murals in the tunnels.</p>
-                        <p>Another student in the course was Kasim O'Meally an RA and employee of the Center for Residence Life (who oversees the current process for creating murals). Together, Wilson and Kasim went through lots of archival documents from ResLife and uncovered a photo album from when the now-defunct Residence Hall Association, who oversaw the murals, performed an inventory of the murals. Though the quality of these photos is poor, all of the lost murals were scanned at the RIT Archives and uploaded to <i>Tunnelvision</i> with the tag <a href="tags?t=RHA SCRAPBOOK">“RHA Scrapbook”</a>.</p>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <h2>About the Tunnel Visionaries</h2>
-                    <div class="text-start">
-                        <p>The <i>Tunnelvision</i> project has now evolved into more than just a website; Wilson and Kasim have started a club, the Tunnel Visionaries, with the goal of telling the story of the murals, helping to maintain the murals, and helping new students appreciate the art in the tunnels. For more info on the club, reach out to <a href="mailto:tunnelvision@csh.rit.edu">tunnelvision@csh.rit.edu</a>!</p>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <img class="img-fluid" alt="Selfie of six current students in a room with old murals." src="{{ url_for('static', filename='images/tag_group.jpg') }}">
-                </div>
+            </div>
+            <div class="col-md-6">
+                <img class="img-fluid" alt="Selfie of six current students in a room with old murals."
+                    src="{{ url_for('static', filename='images/tag_group.jpg') }}">
+            </div>
         </div>
     </div>
 
