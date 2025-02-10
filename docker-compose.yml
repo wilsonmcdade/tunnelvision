@@ -1,0 +1,29 @@
+version: '3'
+
+services:
+  minio:
+    image: docker.io/minio/minio
+    container_name: tunnelvision_minio
+    env_file: "compose.env"
+    ports:
+      - "9000:9000"  # S3 compatible API endpoint
+      - "9001:9001"  # MinIO console UI
+    volumes:
+      - minio-data:/data
+    command: server /data --console-address ":9001"
+
+  db:
+    image: docker.io/postgres
+    container_name: tunnelvision_db
+    restart: unless-stopped
+    # set shared memory limit when using docker-compose
+    shm_size: 128mb
+    env_file: "compose.env"
+    ports:
+      - "5432:5432"
+    volumes:
+      - tunnelvision-db-data:/var/lib/postgresql/data
+
+volumes:
+  minio-data:
+  tunnelvision-db-data:
