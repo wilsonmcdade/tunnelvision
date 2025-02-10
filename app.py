@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func, ForeignKey, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from s3 import get_bucket, get_file_s3, upload_file, remove_file, get_file_list, get_file
+from s3 import S3Bucket
 from typing import Optional
 import shutil
 import pandas as pd
@@ -117,7 +117,8 @@ git_cmd = ['git', 'rev-parse', '--short', 'HEAD']
 app.config["GIT_REVISION"] = subprocess.check_output(git_cmd).decode('utf-8').rstrip()
 
 logging.info("Connecting to S3 Bucket {0}".format(app.config["BUCKET_NAME"]))
-s3_bucket = get_bucket(app.config["S3_URL"], app.config["S3_KEY"], app.config["S3_SECRET"], app.config["BUCKET_NAME"])
+
+s3_bucket = S3Bucket(app.config["BUCKET_NAME"], app.config["S3_KEY"], app.config["S3_SECRET"], app.config["S3_URL"])
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://{0}:{1}@{2}:{3}/{4}'.format(
     app.config["DBUSER"],
@@ -169,7 +170,7 @@ def mural_json(mural: Mural):
     thumbnail = None
     for image in image_data:
         if image.ordering == 0:
-            thumbnail = get_file_s3(s3_bucket, image.imghash)
+            thumbnail = s3_bucket.get_file_s3(image.imghash)
         else:
             images.append(image_json(image))
 
@@ -234,7 +235,7 @@ Create a JSON object for an image
 """
 def image_json(image: Image):
     out = {
-        "imgurl": get_file_s3(s3_bucket, image.imghash),
+        "imgurl": s3_bucket.get_file_s3(image.imghash),
         "ordering": image.ordering,
         "caption": image.caption,
         "alttext": image.alttext,
@@ -243,7 +244,7 @@ def image_json(image: Image):
         "id": image.id
     }
     if image.fullsizehash != None:
-        out["fullsizeimage"] = get_file_s3(s3_bucket, image.fullsizehash)
+        out["fullsizeimage"] = s3_bucket.get_file_s3(image.fullsizehash)
     return out
 
 """
@@ -732,7 +733,7 @@ def deleteMuralEntry(id):
             .where(Mural.id == id)
     )
     for image in images:
-        remove_file(s3_bucket, image.imghash)
+        s3_bucket.remove_file(image.imghash)
         db.session.execute(
             db.delete(Image)
                 .where(Image.id == image.id)
@@ -748,7 +749,7 @@ def uploadImageResize(file, mural_id, count):
     file.seek(0)
 
     # Upload full size img to S3
-    upload_file(s3_bucket, fullsizehash, file)
+    s3_bucket.upload_file(fullsizehash, file)
 
     with PilImage.open(file) as im:
         width = (im.width * app.config["MAX_IMG_HEIGHT"]) // im.height
@@ -765,9 +766,9 @@ def uploadImageResize(file, mural_id, count):
         file_hash = hashlib.md5(rs.read()).hexdigest()
         rs.seek(0)
 
-        upload_file(s3_bucket, file_hash, rs, filename=fullsizehash+".resized")
+        s3_bucket.upload_file(file_hash, rs, filename=fullsizehash+".resized")
 
-        #print(get_file_s3(s3_bucket, file_hash))
+        #print(s3_bucket.get_file_s3(file_hash))
 
         img = Image(
             fullsizehash=fullsizehash,
@@ -1029,7 +1030,7 @@ def deleteImage(id):
     ).scalars()
 
     for image in images:
-        remove_file(s3_bucket, image.imghash)
+        s3_bucket.remove_file(image.imghash)
         db.session.execute(
             db.delete(ImageMuralRelation)
                 .where(ImageMuralRelation.image_id == id)
@@ -1182,7 +1183,7 @@ def upload():
                 tb.seek(0)
 
                 # Upload thumnail version
-                upload_file(s3_bucket, file_hash, tb, (fullsizehash + ".thumbnail"))
+                s3_bucket.upload_file(file_hash, tb, (fullsizehash + ".thumbnail"))
                 img = Image(
                     imghash=file_hash,
                     ordering=0
