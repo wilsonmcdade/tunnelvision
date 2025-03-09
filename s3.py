@@ -19,6 +19,11 @@ class S3Bucket:
             endpoint_url=endpoint,
         )
 
+    # unused
+    # def get_file(self, bucket_name, file_hash, new_file_name, key, secret):
+    #     with open(new_file_name, "wb") as f:
+    #         boto.utils.fetch_file(f"s3://{bucket_name}/{file_hash}", file=f, username=key, password=secret)
+
     def get_file_s3(self, file_hash):
         """ Get the path to the file specified by file_hash"""
         # Generates presigned URL that lasts for 60 seconds (1 minute)
