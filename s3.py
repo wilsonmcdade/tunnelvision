@@ -19,10 +19,10 @@ class S3Bucket:
             endpoint_url=endpoint,
         )
 
-    def get_file(self, bucket_name, file_hash, download_to):
+    def get_file(self, file_hash, download_to):
         """ Download the file to the specified path """
         with open(download_to, "wb") as f:
-            self._client.download_fileobj(bucket_name, file_hash, f)
+            self._client.download_fileobj(self.name, file_hash, f)
 
     def get_file_s3(self, file_hash):
         """ Get the path to the file specified by file_hash"""
