@@ -29,7 +29,7 @@ class S3Bucket:
         # Generates presigned URL that lasts for 60 seconds (1 minute)
         # If streaming begins prior to the time cutoff, s3 will allow
         # for the streaming to continue, uninterrupted.
-        if (key == None):
+        if (file_hash is None):
             print("Failed to fetch {0}".format(file_hash))
             url = "../static/images/csh_tilted.png"
         else:
