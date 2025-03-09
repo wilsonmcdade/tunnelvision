@@ -411,7 +411,7 @@ def export_images(path):
             os.makedirs(basepath)
 
         for i in images:
-            get_file(app.config['BUCKET_NAME'], i.fullsizehash, basepath + str(i.ordering) + ".jpg", app.config['S3_KEY'], app.config['S3_SECRET'])
+            s3_bucket.get_file(i.fullsizehash, basepath + str(i.ordering) + ".jpg")
             
 
 """
@@ -1014,7 +1014,7 @@ def makeThumbnail():
     ).scalar_one()
     newfilename = '/tmp/{0}.thumb'.format(image.id)
 
-    get_file(app.config['BUCKET_NAME'], image.imghash, newfilename, app.config['S3_KEY'], app.config['S3_SECRET'])
+    s3_bucket.get_file(image.imghash, newfilename)
     make_thumbnail(mural_id, newfilename)
     
     return redirect("/edit/{0}".format(mural_id))
