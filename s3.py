@@ -50,12 +50,15 @@ class S3Bucket:
 
     def upload_file(self, file_hash, f, filename=""):
 
-        file_path = filename if filename != "" else f.filename
+        # Set content type
+        # There is most certainly a better way to do this but w/e
+        if filename == "":
+            filename = f.filename
 
-        content_type = mimetypes.guess_type(file_path)[0]
-
-        self._client.upload_file(
-            file_path, self.name, file_hash, {"ContentType": content_type}
+        content_type = mimetypes.guess_type(filename)[0]
+        # Upload the file
+        self._client.upload_fileobj(
+            f, file_hash, {"ContentType": content_type}
         )
 
     def remove_file(self, file_hash):
