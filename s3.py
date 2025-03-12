@@ -48,8 +48,14 @@ class S3Bucket:
     #     # TODO: this may not work with datetime objects
     #     return date[:(date.index(":") - 2)]
 
-    def upload_file(self, file_hash, f, filename=""):
+    def upload_file(self, file_hash:str, f, filename=""):
+        """Uploads a file from the provided file object to s3
 
+        Args:
+            file_hash (str): the hash of the file to use for the filename
+            f (a file-like object): the file-like object to upload
+            filename (str, optional): the filename of the file to upload. Defaults to "", which auto-detects the name.
+        """
         # Set content type
         # There is most certainly a better way to do this but w/e
         if filename == "":
