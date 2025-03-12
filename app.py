@@ -650,7 +650,7 @@ def make_thumbnail(mural_id, file):
         tb.seek(0)
 
         # Upload thumnail version
-        upload_file(s3_bucket, file_hash, tb, (file + ".thumbnail"))
+        s3_bucket.upload_file(file_hash, tb, (file + ".thumbnail"))
 
         img = Image(
             imghash=file_hash,
