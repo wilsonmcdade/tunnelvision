@@ -64,7 +64,7 @@ class S3Bucket:
         content_type = mimetypes.guess_type(filename)[0]
         # Upload the file
         self._client.upload_fileobj(
-            f, file_hash, {"ContentType": content_type}
+            f, file_hash, ExtraArgs={"ContentType": content_type}
         )
 
     def remove_file(self, file_hash):
