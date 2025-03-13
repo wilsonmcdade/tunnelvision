@@ -70,4 +70,4 @@ class S3Bucket:
     def remove_file(self, file_hash):
         # Does anybody read these comments
         # yes
-        self._client.delete_object(self.name, file_hash)
+        self._client.delete_object(Bucket=self.name, Key=file_hash)
