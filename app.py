@@ -751,6 +751,7 @@ def uploadImageResize(file, mural_id, count):
     upload_file(s3_bucket, fullsizehash, file)
 
     with PilImage.open(file) as im:
+        exif = im.getexif()
         width = (im.width * app.config["MAX_IMG_HEIGHT"]) // im.height
 
         (width, height) = (width, app.config["MAX_IMG_HEIGHT"])
@@ -758,7 +759,7 @@ def uploadImageResize(file, mural_id, count):
         im = im.resize((width,height))
 
         im = im.convert("RGB")
-        im.save(fullsizehash + ".resized", "JPEG")
+        im.save(fullsizehash + ".resized", "JPEG", exif=exif)
 
     with open((fullsizehash + ".resized"), "rb") as rs:
 
