@@ -1005,7 +1005,7 @@ def makeThumbnail():
     )
 
     # Remove file from S3
-    remove_file(s3_bucket, curr_thumbnail.imghash)
+    s3_bucket.remove_file(curr_thumbnail.imghash)
 
     # Download base photo, turn it into thumbnail
     image = db.session.execute(
