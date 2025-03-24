@@ -7,7 +7,6 @@ name = "pypi"
 alembic = "==1.13.1"
 attrs = "==23.1.0"
 blinker = "==1.6.3"
-boto = "==2.49.0"
 brother-ql = "==0.9.4"
 bytecode = "==0.15.1"
 cattrs = "==23.2.3"
@@ -42,6 +41,7 @@ wrapt = "==1.16.0"
 xmltodict = "==0.13.0"
 zipp = "==3.19.2"
 pandas = "*"
+boto3 = "*"
 
 [dev-packages]
 
