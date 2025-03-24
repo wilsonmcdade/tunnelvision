@@ -10,6 +10,7 @@ import re
 from functools import wraps
 from random import shuffle
 from PIL import Image as PilImage
+from PIL.ExifTags import TAGS as EXIF_TAGS, Base as ExifBase
 from datetime import datetime, timezone
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func, ForeignKey, text
@@ -751,14 +752,17 @@ def uploadImageResize(file, mural_id, count):
     upload_file(s3_bucket, fullsizehash, file)
 
     with PilImage.open(file) as im:
+        exif = im.getexif()
         width = (im.width * app.config["MAX_IMG_HEIGHT"]) // im.height
 
         (width, height) = (width, app.config["MAX_IMG_HEIGHT"])
         #print(width, height)
         im = im.resize((width,height))
+        exif[ExifBase.ImageWidth.value] = width
+        exif[ExifBase.ImageLength.value] = height
 
         im = im.convert("RGB")
-        im.save(fullsizehash + ".resized", "JPEG")
+        im.save(fullsizehash + ".resized", "JPEG", exif=exif)
 
     with open((fullsizehash + ".resized"), "rb") as rs:
 
