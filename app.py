@@ -464,13 +464,13 @@ def checkMuralExists(id):
 """
 Get all murals with given tag
 """
-def getMuralsTagged(tag):
+def getMuralsTagged(tag_set):
     return list(map(mural_json, db.session.execute(
         db.select(Mural)
             .select_from(MuralTag)
             .join(Tag, MuralTag.tag_id == Tag.id)
             .join(Mural, Mural.id == MuralTag.mural_id)
-            .where(Tag.name == tag)
+            .where(Tag.name.in_(list(tag_set)))
     ).scalars()))
 
 """
@@ -549,14 +549,23 @@ def catalog():
     else:
         return render_template("filtered.html", pageTitle="Query - {0}".format(query), subHeading="Search Query", q=query, murals=searchMurals(query))
 
-@app.route("/tags?t=<tag>")
+@app.route("/tags?t=<tags>")
 @app.route("/tags")
 def tags():
-    tag = request.args.get("t")
-    if tag == None:
-        return render_template("404.html"), 404
-    else:
-        return render_template("filtered.html", pageTitle="Tag - {0}".format(tag), subHeading=getTagDetails(tag)['description'], murals=getMuralsTagged(tag))
+    t_param = request.args.get("t")
+    if t_param != '':
+        tag_param = request.args.get('t')
+        if tag_param is None:
+            return render_template("404.html"), 404
+        tag_set = set(tag_param.strip().split(':')) # Takes list of tags separated by + and turns this into a set 
+        print(tag_set)
+        if len(tag_set) == 1:
+            (tag, ) = tag_set
+            return render_template("filtered.html", pageTitle="Tag - {0}".format(tag), subHeading=getTagDetails(tag)['description'], murals=getMuralsTagged(tag_set))
+        else:
+            tag_set_as_str = ', '.join(tag_set)
+            return render_template("filtered.html", pageTitle=f"Tags - {tag_set_as_str}", subHeading="Multiple tags", murals=getMuralsTagged(tag_set))
+    return render_template("404.html"), 404
 
 """
 Get next page of murals
