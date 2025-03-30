@@ -8,7 +8,7 @@ import boto.s3.connection
 
 def get_file(bucket_name, file_hash, new_file_name, key, secret):
     with open(new_file_name, "wb") as f:
-        boto.utils.fetch_file("s3://{0}/{1}".format(bucket_name,file_hash), file=f, username=key, password=secret)
+        boto.utils.fetch_file(f"s3://{bucket_name}/{file_hash}", file=f, username=key, password=secret)
 
 def get_file_s3(bucket, file_hash):
     key = bucket.get_key(file_hash)
