@@ -19,6 +19,7 @@ from typing import Optional
 import shutil
 import pandas as pd
 import json_log_formatter
+from pathlib import Path
 
 class Base(DeclarativeBase):
     pass
@@ -99,10 +100,11 @@ logger.setLevel(logging.INFO)
 
 logging.info("Starting up...")
 
-if os.path.exists(os.path.join(os.getcwd(), "config.py")):
-    app.config.from_pyfile(os.path.join(os.getcwd(), "config.py"))
+configpath = Path("config.py")
+if configpath.exists():
+    app.config.from_pyfile(configpath)
 else:
-    app.config.from_pyfile(os.path.join(os.getcwd(), "config.env.py"))
+    app.config.from_pyfile(Path("config.env.py"))
 
 
 if app.config["JSON_LOGS"] is True:
@@ -381,8 +383,8 @@ def export_database(dir, public):
 
     images_df = pd.read_sql(images_select, db.engine)
 
-    if not os.path.exists(dir):
-        os.makedirs(dir)
+    if not Path(dir).exists():
+        Path(dir).mkdir()
 
     murals_df.to_csv(dir+"murals.csv")
     images_df.to_csv(dir+"images.csv")
@@ -406,8 +408,8 @@ def export_images(path):
 
         basepath = path + "images/" + str(m.id) + "/"
 
-        if not os.path.exists(basepath):
-            os.makedirs(basepath)
+        if not Path(basepath).exists():
+            Path(basepath).mkdir()
 
         for i in images:
             get_file(app.config['BUCKET_NAME'], i.fullsizehash, basepath + str(i.ordering) + ".jpg", app.config['S3_KEY'], app.config['S3_SECRET'])
