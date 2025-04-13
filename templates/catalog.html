@@ -42,7 +42,7 @@ Catalog - TunnelVision
         <div class="row">
             {% for mural in murals %}
                 {% if loop.index is divisibleby 18 %}
-                    {{ muralcard(mural, True, 1) }}
+                    {{ muralcard(mural, True, page) }}
                 {% else %}
                     {{ muralcard(mural) }}
                 {% endif %}

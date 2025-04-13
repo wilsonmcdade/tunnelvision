@@ -540,12 +540,16 @@ def openCanvas():
     # TODO: Use a random image of the Open Canvas instead of a random mural image
     return render_template("open-canvas.html", canvasHighlight=getRandomImages(1)[0])
 
-@app.route("/catalog?q=<query>")
 @app.route("/catalog")
 def catalog():
     query = request.args.get("q")
+    page = request.args.get("p")
     if query == None:
-        return render_template("catalog.html", q=query, murals=getMuralsPaginated(0), tags=getAllTags())
+        if page is None:
+            return render_template("catalog.html", q=query, page=1, murals=getMuralsPaginated(0), tags=getAllTags())
+        else:
+            page = int(page)
+            return render_template("paginated.html", page=(page+1),murals=getMuralsPaginated(page))
     else:
         return render_template("filtered.html", pageTitle="Query - {0}".format(query), subHeading="Search Query", q=query, murals=searchMurals(query))
 
@@ -557,19 +561,6 @@ def tags():
         return render_template("404.html"), 404
     else:
         return render_template("filtered.html", pageTitle="Tag - {0}".format(tag), subHeading=getTagDetails(tag)['description'], murals=getMuralsTagged(tag))
-
-"""
-Get next page of murals
-"""
-@app.route("/page?p=<page>")
-@app.route("/page")
-def paginated():
-    page = int(request.args.get("p"))
-    if page == None:
-        #print("No page")
-        return render_template("404.html"), 404
-    else:
-        return render_template("paginated.html", page=(page+1), murals=getMuralsPaginated(page))
 
 """
 Page for specific mural details
